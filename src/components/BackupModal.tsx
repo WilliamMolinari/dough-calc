@@ -20,6 +20,7 @@ export function BackupModal({
   onSnapshotNow,
   onClearAll,
   onToast,
+  onExported,
 }: {
   open: boolean;
   onClose: () => void;
@@ -34,6 +35,8 @@ export function BackupModal({
   /** Wipes the journal and every preference on this device. */
   onClearAll?: () => void | Promise<void>;
   onToast: (message: string, tone?: "success" | "error" | "info") => void;
+  /** Tells the app the export happened so the journal can show its age. */
+  onExported?: (at: string) => void;
 }) {
   const [mode, setMode] = useState<"merge" | "replace">("merge");
   const [pending, setPending] = useState<{
@@ -87,6 +90,7 @@ export function BackupModal({
         /* best effort */
       }
       setLastBackup(now);
+      onExported?.(now);
       const missing = portable.reduce(
         (sum, bake) => sum + bake.photos.filter(isStoredPhoto).length,
         0,

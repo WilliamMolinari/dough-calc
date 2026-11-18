@@ -5,10 +5,12 @@ import {
   HardDriveDownload,
   Palette,
   Scale,
+  ShieldCheck,
   Thermometer,
   Trash2,
 } from "lucide-react";
 import { ActionButton, Badge, Card, SectionHeading, cx } from "./ui";
+import type { PersistenceState } from "../lib/storageHealth";
 import type { ThemeMode } from "../lib/theme";
 import type { TempUnit, Unit } from "../lib/types";
 
@@ -64,6 +66,8 @@ export function SettingsPanel({
   photoCount,
   onOpenBackup,
   onClearAll,
+  persistence,
+  onRequestPersistence,
 }: {
   theme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
@@ -75,6 +79,9 @@ export function SettingsPanel({
   photoCount: number;
   onOpenBackup: () => void;
   onClearAll: () => void | Promise<void>;
+  /** Whether the browser has promised to keep this origin's data. */
+  persistence: PersistenceState;
+  onRequestPersistence: () => void | Promise<void>;
 }) {
   const [confirmClear, setConfirmClear] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -184,6 +191,41 @@ export function SettingsPanel({
             <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-cream/30">Photos</p>
             <p className="mt-0.5 font-mono text-[14px] text-cream/85">{photoCount}</p>
           </div>
+        </div>
+
+        <div className="mt-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-cream/30">
+              Storage protection
+            </p>
+            <Badge
+              tone={
+                persistence === "granted" ? "lime" : persistence === "unsupported" ? "hot" : "neutral"
+              }
+            >
+              {persistence === "granted"
+                ? "protected"
+                : persistence === "unsupported"
+                  ? "no protection"
+                  : "best effort"}
+            </Badge>
+          </div>
+          <p className="mt-1 text-[11px] leading-relaxed text-cream/55">
+            {persistence === "granted"
+              ? "The browser has agreed to keep this journal even when the device runs low on space."
+              : persistence === "unsupported"
+                ? "This browser offers no way to protect storage, so the journal can be cleared when space runs low. Export a backup as well."
+                : "The browser may clear this journal if the device runs low on space or the site goes unused. Asking it to protect the journal helps."}
+          </p>
+          {persistence === "best-effort" && (
+            <button
+              type="button"
+              onClick={() => void onRequestPersistence()}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-ember/30 bg-ember/10 px-2.5 py-1.5 text-[11.5px] text-ember-2 transition-colors hover:bg-ember/20"
+            >
+              <ShieldCheck size={12} /> Ask the browser to protect it
+            </button>
+          )}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">

@@ -21,6 +21,7 @@ import { fmtDate, fmtWeight, round } from "../lib/format";
 import { countInlinePhotos, photoSrc } from "../lib/photoFiles";
 import { doughMadeGrams, isPlannedTrial } from "../lib/journal";
 import { STORAGE_BUDGET_BYTES, storagePressure } from "../lib/storage";
+import { backupAgeDays } from "../lib/storageHealth";
 import { STYLES } from "../lib/presets";
 import type { BakeEntry, Unit } from "../lib/types";
 import { ActionButton, Badge, Card, Stars, cx } from "./ui";
@@ -40,6 +41,7 @@ export function Journal({
   unit,
   storedBytes,
   storageBudget = STORAGE_BUDGET_BYTES,
+  lastBackupAt,
   onOpenBake,
   onNewBake,
   onBackup,
@@ -53,6 +55,8 @@ export function Journal({
   storedBytes: number;
   /** Real quota when the browser exposes it, otherwise the 5 MB target. */
   storageBudget?: number;
+  /** ISO stamp of the last exported backup, or null when there has never been one. */
+  lastBackupAt: string | null;
   onOpenBake: (bake: BakeEntry) => void;
   onNewBake: () => void;
   onBackup: () => void;
@@ -111,6 +115,7 @@ export function Journal({
   const awaitingCount = bakes.filter((bake) => bake.ratings.overall <= 0).length;
   const photoCount = bakes.reduce((sum, bake) => sum + (bake.photos?.length ?? 0), 0);
   const pressure = storagePressure(storedBytes, storageBudget);
+  const backupAge = backupAgeDays(lastBackupAt);
   const storagePct = Math.min(
     100,
     Math.round((storedBytes / Math.max(storageBudget, 1)) * 100),
@@ -125,6 +130,30 @@ export function Journal({
           </p>
           <p className="mt-0.5 text-[11.5px] text-cream/35">
             Rate, compare and mine your own bakes for patterns.
+          </p>
+          <p
+            className={cx(
+              "mt-1 text-[11px]",
+              backupAge === null || backupAge > 14 ? "text-ember/75" : "text-cream/35",
+            )}
+          >
+            {backupAge === null
+              ? "No backup yet — this journal only lives in this browser."
+              : backupAge === 0
+                ? "Last backup: today."
+                : `Last backup: ${backupAge} day${backupAge === 1 ? "" : "s"} ago.`}
+            {(backupAge === null || backupAge > 14) && (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  onClick={onBackup}
+                  className="underline decoration-dotted underline-offset-2 transition-colors hover:text-ember"
+                >
+                  Back up now
+                </button>
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-1.5">

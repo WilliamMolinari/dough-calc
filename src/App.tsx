@@ -31,6 +31,7 @@ import {
   estimateStorage,
   loadBakes,
   loadFormula,
+  loadLastBackup,
   loadTempUnit,
   loadTheme,
   loadUnit,
@@ -50,6 +51,11 @@ import { deleteBakeEntry, duplicateBakeEntry, nextTrialName, rootIdOf } from "./
 import { adjustFormula, trialChangeLabel, type TrialVariable } from "./lib/experiments";
 import { normalizeOutcomeTags } from "./lib/outcomes";
 import { applyTheme, type ThemeMode } from "./lib/theme";
+import {
+  readPersistence,
+  requestPersistence,
+  type PersistenceState,
+} from "./lib/storageHealth";
 import type {
   BakeEntry,
   Formula,
@@ -391,6 +397,8 @@ export default function App() {
   const [unit, setUnit] = useState<Unit>(() => loadUnit());
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => loadTempUnit());
   const [theme, setTheme] = useState<ThemeMode>(() => loadTheme());
+  const [persistence, setPersistence] = useState<PersistenceState>("best-effort");
+  const [lastBackupAt, setLastBackupAt] = useState<string | null>(() => loadLastBackup());
   const [bakes, setBakes] = useState<BakeEntry[]>(() => loadBakes());
   const [storageInfo, setStorageInfo] = useState(() => ({
     bytes: measureStoredBytes(),
@@ -450,6 +458,19 @@ export default function App() {
     },
     [dismissToast],
   );
+
+  const protectStorage = async () => {
+    const next = await requestPersistence();
+    setPersistence(next);
+    pushToast(
+      next === "granted"
+        ? "Storage protected — the browser will keep your journal"
+        : next === "unsupported"
+          ? "This browser cannot protect storage — export a backup instead"
+          : "The browser kept storage on best effort — export a backup as well",
+      next === "granted" ? "success" : "info",
+    );
+  };
 
   const effectiveFormula = useMemo(() => {
     if (!formula.autoLeaven) return formula;
@@ -515,6 +536,21 @@ export default function App() {
     applyTheme(theme);
     writeStored(STORAGE_KEYS.theme, theme);
   }, [theme]);
+
+  // Ask once on load: a journal that the browser will not evict is the whole
+  // promise of a local-first app, and the answer can change after installing.
+  useEffect(() => {
+    let cancelled = false;
+    const ensure = async () => {
+      const current = await readPersistence();
+      const next = current === "best-effort" ? await requestPersistence() : current;
+      if (!cancelled) setPersistence(next);
+    };
+    void ensure();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Two tabs both writing localStorage would silently lose entries. Surface it
   // instead of auto-reloading, which could discard what this tab is editing.
@@ -920,6 +956,7 @@ export default function App() {
     setSaveOpen(false);
     setKitchen(null);
     setOnboarded(false);
+    setLastBackupAt(null);
     lastPersistedCount.current = 0;
     skipNextSnapshot.current = true;
     journalWriteError.current = false;
@@ -1189,6 +1226,7 @@ export default function App() {
               unit={unit}
               storedBytes={storageInfo.bytes}
               storageBudget={storageInfo.budget}
+              lastBackupAt={lastBackupAt}
               onOpenBake={(bake) => setActiveBakeId(bake.id)}
               onNewBake={openNewBake}
               onBackup={() => setBackupOpen(true)}
@@ -1208,6 +1246,8 @@ export default function App() {
               photoCount={bakes.reduce((sum, bake) => sum + bake.photos.length, 0)}
               onOpenBackup={() => setBackupOpen(true)}
               onClearAll={wipeAllData}
+              persistence={persistence}
+              onRequestPersistence={protectStorage}
             />
           ) : (
             <div className="space-y-4">
@@ -1324,6 +1364,7 @@ export default function App() {
         onSnapshotNow={createSnapshot}
         onClearAll={wipeAllData}
         onToast={pushToast}
+        onExported={setLastBackupAt}
       />
 
       {designBake && (

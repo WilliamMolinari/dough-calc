@@ -131,6 +131,12 @@ export function loadTheme(): ThemeMode {
   return normalizeTheme(readStored<unknown>(STORAGE_KEYS.theme, "dark"));
 }
 
+/** ISO stamp of the last exported backup, or null when there has never been one. */
+export function loadLastBackup(): string | null {
+  const stored = readStored<unknown>(STORAGE_KEYS.lastBackup, null);
+  return typeof stored === "string" && !Number.isNaN(new Date(stored).getTime()) ? stored : null;
+}
+
 function number(value: unknown, fallback = 0): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
