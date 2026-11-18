@@ -47,6 +47,17 @@ export const OVEN_PROFILES: OvenProfile[] = [
     logName: "Wood-fired",
   },
   {
+    id: "coal",
+    name: "Coal oven",
+    short: "Coal · 380°C · 6 min",
+    tempC: 380,
+    preheatMin: 60,
+    bakeMin: 6,
+    turnMin: 3,
+    note: "Coal runs hot and dry: rotate once at the halfway mark. Apizza should be spotted and charred, not blackened — give the deck a few minutes to recover between pies.",
+    logName: "Coal oven",
+  },
+  {
     id: "electric-deck",
     name: "Electric deck",
     short: "Deck · 350°C · 5 min",
