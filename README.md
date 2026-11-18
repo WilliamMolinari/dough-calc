@@ -50,10 +50,12 @@ bar on a phone. The bakes in the journal are example entries, not someone's real
 
 | **Settings** | **Settings on a phone** |
 | --- | --- |
-| <a href="docs/screenshots/settings-desktop.png"><img src="docs/screenshots/settings-desktop.png" width="300" alt="The Settings tab on a desktop browser: the four-tab header, the Weights and Oven dials cards, and a This browser card with backup, bake counts and Clear all data"></a> | <a href="docs/screenshots/settings-phone.png"><img src="docs/screenshots/settings-phone.png" width="150" alt="Settings on a 390 px phone with the four-tab bottom bar: grams or ounces, Celsius or Fahrenheit, and the data card"></a> |
+| <a href="docs/screenshots/settings-desktop.png"><img src="docs/screenshots/settings-desktop.png" width="300" alt="The Settings tab on a desktop browser: the four-tab header, the Appearance card with its Dark and Light choices, the Weights and Oven dials cards, and a This browser card with backup, bake counts and Clear all data"></a> | <a href="docs/screenshots/settings-phone.png"><img src="docs/screenshots/settings-phone.png" width="150" alt="Settings on a 390 px phone with the four-tab bottom bar: the Appearance card offering Dark or Light, then grams or ounces"></a> |
 
-**Settings** gathers the units and oven dials, the backup and restore panel and **Clear all data** in one
-place, while every dough variable stays in the calculator.
+**Settings** gathers the theme, the units and oven dials, the backup and restore panel and
+**Clear all data** in one place, while every dough variable stays in the calculator. The **Appearance**
+card up top switches between **Dark** — the ember-on-black look in these screenshots — and **Light**, a
+warm paper version with black text for a bright kitchen. The choice is remembered on your device.
 
 ### What the main screens are for
 
@@ -62,13 +64,15 @@ place, while every dough variable stays in the calculator.
 | **Calculator** | Choose a style, set how much dough, adjust the recipe, read the weights and the timeline. |
 | **Journal** | Every bake you saved: ratings, photos, notes, comparisons, and **Insights** across them. |
 | **Plan** | Work backwards from a serve time: how much dough, when to start, oven order — plus a starter build with feed times and amounts. |
-| **Settings** | Grams or ounces, Celsius or Fahrenheit, backup and restore, and **Clear all data**. The dough variables stay in the calculator. |
+| **Settings** | Dark or light theme, grams or ounces, Celsius or Fahrenheit, backup and restore, and **Clear all data**. The dough variables stay in the calculator. |
 | **Bake Sommelier** (round button, bottom right) | Ask questions about your bakes; optionally attach a photo of one. |
 
 ### The only controls you need at first
 
 - **g / oz** and **°C / °F** switch units everywhere — in the header for a quick flip, or on the
   **Settings** tab. Nothing is converted or lost.
+- **Dark / light** sits on the **Settings** tab too. It only changes how the app looks — a dark kitchen
+  or a bright one — and the numbers never move.
 - **Sizing** has three modes. **Flour** → start from a bag of flour. **Dough balls** → number of
   pizzas and grams per ball. **Pan size** → the pan's length and width plus **dough per pan**, which
   is what actually sets the depth of a Detroit or focaccia bake.
