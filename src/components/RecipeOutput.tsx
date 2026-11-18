@@ -18,7 +18,7 @@ import {
   Wheat,
 } from "lucide-react";
 import type { DoughMath } from "../lib/calc";
-import { flourBlendLabel, getFlourType } from "../lib/flours";
+import { baseFlourLabel, flourBlendLabel, flourLabel } from "../lib/flours";
 import { fmtHours, fmtWeight, fmtWeightValue, round } from "../lib/format";
 import { ingredientLines } from "../lib/recipe";
 import { convertTempText, fmtTemp } from "../lib/temperature";
@@ -210,7 +210,10 @@ export function RecipeOutput({
         <CompositionChart
           math={math}
           unit={unit}
-          secondaryLabel={formula.flour2Pct > 0 ? getFlourType(formula.flour2Type).label : undefined}
+          primaryLabel={baseFlourLabel(formula)}
+          secondaryLabel={
+            formula.flour2Pct > 0 ? flourLabel(formula.flour2Type, formula.flour2Name) : undefined
+          }
         />
       </Suspense>
 

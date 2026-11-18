@@ -13,6 +13,8 @@ export interface DoughMath {
   water: number;
   waterToAdd: number;
   salt: number;
+  /** Grams of diastatic malt powder. */
+  diastaticMalt: number;
   sweetener: number;
   oil: number;
   yeast: number;
@@ -117,6 +119,7 @@ function paceFromRatio(ratio: number): { label: string; note: string; tone: Pace
 export function calculateDough(formula: Formula): DoughMath {
   const hydration = num(formula.hydration, 30, 120, 65);
   const saltPct = num(formula.salt, 0, 12, 2.5);
+  const maltPct = num(formula.diastaticMalt, 0, 2, 0);
   const oilPct = num(formula.oil, 0, 30, 0);
   const sweetPct = formula.sweetener === "none" ? 0 : num(formula.sweetenerPct, 0, 20, 0);
   const roomTemp = num(formula.roomTemp, 1, 45, 22);
@@ -141,7 +144,13 @@ export function calculateDough(formula: Formula): DoughMath {
 
   // Baker's math, all percentages relative to total flour.
   const multiplier =
-    1 + hydration / 100 + saltPct / 100 + sweetPct / 100 + oilPct / 100 + yeastPct / 100;
+    1 +
+    hydration / 100 +
+    saltPct / 100 +
+    sweetPct / 100 +
+    oilPct / 100 +
+    maltPct / 100 +
+    yeastPct / 100;
 
   const flour =
     formula.sizing === "balls"
@@ -153,6 +162,7 @@ export function calculateDough(formula: Formula): DoughMath {
 
   const water = (flour * hydration) / 100;
   const salt = (flour * saltPct) / 100;
+  const diastaticMalt = (flour * maltPct) / 100;
   const sweetener = (flour * sweetPct) / 100;
   const oil = (flour * oilPct) / 100;
   const yeast = (flour * yeastPct) / 100;
@@ -164,7 +174,7 @@ export function calculateDough(formula: Formula): DoughMath {
   const prefermentYeast = yeast * 0.2;
   const flourToAdd = Math.max(0, flour - starterFlour - prefermentFlour);
   const waterToAdd = Math.max(0, water - starterWater - prefermentWater);
-  const totalDough = flour + water + salt + sweetener + oil + yeast;
+  const totalDough = flour + water + salt + diastaticMalt + sweetener + oil + yeast;
   const ballWeight = totalDough / ballCount;
 
   const effectiveHours = round(
@@ -191,6 +201,7 @@ export function calculateDough(formula: Formula): DoughMath {
     water,
     waterToAdd,
     salt,
+    diastaticMalt,
     sweetener,
     oil,
     yeast,

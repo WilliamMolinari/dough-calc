@@ -1,6 +1,6 @@
 import type { GoogleGenAI } from "@google/genai";
 import { calculateDough } from "./calc";
-import { getFlourType, secondFlourShare } from "./flours";
+import { baseFlourLabel, flourLabel, secondFlourShare } from "./flours";
 import { lineageOf } from "./journal";
 import { OUTCOME_LABELS } from "./outcomes";
 import { loadBakes } from "./storage";
@@ -229,12 +229,16 @@ function describeBake(bake: BakeEntry, index: number, bakes: BakeEntry[]): strin
     `Formula: ${math.ballCount} × ${n(math.ballWeight)} g balls; ${n(f.hydration, 1)}% hydration; ${n(
       f.salt,
       1,
-    )}% salt; ${n(f.oil, 1)}% oil; ${SWEETENER_LABEL[f.sweetener]} ${n(f.sweetenerPct, 1)}%; ${leavenLine(bake)}.`,
+    )}% salt; ${n(f.oil, 1)}% oil; ${SWEETENER_LABEL[f.sweetener]} ${n(f.sweetenerPct, 1)}%; ${
+      f.diastaticMalt > 0 ? `${n(f.diastaticMalt, 2)}% diastatic malt; ` : ""
+    }${leavenLine(bake)}.`,
     secondFlourShare(f) > 0
-      ? `Flour blend: ${n(100 - secondFlourShare(f))}% base flour + ${n(
+      ? `Flour blend: ${n(100 - secondFlourShare(f))}% ${baseFlourLabel(f)} + ${n(
           secondFlourShare(f),
-        )}% ${getFlourType(f.flour2Type).label}.`
-      : "Single flour.",
+        )}% ${flourLabel(f.flour2Type, f.flour2Name)}.`
+      : f.baseFlourName
+        ? `Single flour: ${baseFlourLabel(f)}.`
+        : "Single flour.",
     `Fermentation: bulk ${n(f.bulkHours, 1)} h @ ${n(f.roomTemp, 1)} °C; cold retard ${n(
       f.retardHours,
       1,

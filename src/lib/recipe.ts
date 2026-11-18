@@ -1,6 +1,6 @@
 import type { DoughMath } from "./calc";
 import type { Formula, Unit } from "./types";
-import { getFlourType, secondFlourShare } from "./flours";
+import { baseFlourLabel, flourLabel, secondFlourShare } from "./flours";
 import { fmtWeight } from "./format";
 
 export const YEAST_LABEL: Record<Formula["yeastType"], string> = {
@@ -37,11 +37,11 @@ export function ingredientLines(formula: Formula, math: DoughMath, unit: Unit): 
   // flour, so the two flour lines together still add up to the batch.
   const secondary = Math.min(Math.max(0, math.flourSecondary ?? 0), math.flour);
   const primary = math.flour - secondary;
-  const secondaryFlour = getFlourType(formula.flour2Type);
+  const secondaryFlourLabel = flourLabel(formula.flour2Type, formula.flour2Name);
 
   lines.push({
     key: "flour",
-    label: secondary > 0.5 ? `Base flour` : "Flour",
+    label: baseFlourLabel(formula),
     grams: Math.max(0, primary - heldFlour),
     note:
       heldFlour > 0.5
@@ -56,7 +56,7 @@ export function ingredientLines(formula: Formula, math: DoughMath, unit: Unit): 
   if (secondary > 0.5) {
     lines.push({
       key: "flour2",
-      label: secondaryFlour.label,
+      label: secondaryFlourLabel,
       grams: secondary,
       note: `${Math.round(secondFlourShare(formula))}% of the flour blend`,
       accent: "flour2",
@@ -70,6 +70,15 @@ export function ingredientLines(formula: Formula, math: DoughMath, unit: Unit): 
     accent: "water",
   });
   lines.push({ key: "salt", label: "Salt", grams: math.salt, accent: "extra" });
+  if (math.diastaticMalt > 0.005) {
+    lines.push({
+      key: "malt",
+      label: "Diastatic malt powder",
+      grams: math.diastaticMalt,
+      note: `${Number(Number(formula.diastaticMalt).toFixed(2))}% of flour`,
+      accent: "extra",
+    });
+  }
 
   if (formula.leavenMode === "sourdough") {
     lines.push({

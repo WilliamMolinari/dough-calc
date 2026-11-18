@@ -14,21 +14,32 @@ const COLORS = {
 export function CompositionChart({
   math,
   unit,
+  primaryLabel,
   secondaryLabel,
 }: {
   math: DoughMath;
   unit: Unit;
+  /** Name of the main flour, when the baker named it. */
+  primaryLabel?: string;
   /** Name of the second flour, when a blend is active. */
   secondaryLabel?: string;
 }) {
   const secondary = Math.min(Math.max(0, math.flourSecondary ?? 0), math.flour);
   const data = [
-    { name: secondary > 0.5 ? "Base flour" : "Flour", value: math.flour - secondary, color: COLORS.flour },
+    {
+      name: primaryLabel ?? (secondary > 0.5 ? "Base flour" : "Flour"),
+      value: math.flour - secondary,
+      color: COLORS.flour,
+    },
     ...(secondary > 0.5
       ? [{ name: secondaryLabel ?? "Second flour", value: secondary, color: COLORS.flour2 }]
       : []),
     { name: "Water", value: math.water, color: COLORS.water },
-    { name: "Salt & extras", value: math.salt + math.sweetener + math.oil, color: COLORS.extras },
+    {
+      name: "Salt & extras",
+      value: math.salt + math.diastaticMalt + math.sweetener + math.oil,
+      color: COLORS.extras,
+    },
     ...(math.yeast > 0.0001
       ? [{ name: "Yeast", value: math.yeast, color: COLORS.yeast }]
       : []),

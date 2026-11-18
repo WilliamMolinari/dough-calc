@@ -45,6 +45,18 @@ export function buildBakeComparison(
     { label: "Hydration", section: "Recipe", a: a.formula.hydration, b: b.formula.hydration, unit: "%", digits: 1 },
     { label: "Salt", section: "Recipe", a: a.formula.salt, b: b.formula.salt, unit: "%", digits: 1 },
     { label: "Oil", section: "Recipe", a: a.formula.oil, b: b.formula.oil, unit: "%", digits: 1 },
+    ...(a.formula.diastaticMalt > 0 || b.formula.diastaticMalt > 0
+      ? [
+          {
+            label: "Diastatic malt",
+            section: "Recipe" as ComparisonSection,
+            a: a.formula.diastaticMalt,
+            b: b.formula.diastaticMalt,
+            unit: "%",
+            digits: 2,
+          },
+        ]
+      : []),
     { label: "Total dough", section: "Recipe", a: mathA.totalDough, b: mathB.totalDough, unit: "", digits: 0, weight: true },
     { label: "Total flour", section: "Recipe", a: mathA.flour, b: mathB.flour, unit: "", digits: 0, weight: true },
     { label: "Water", section: "Recipe", a: mathA.water, b: mathB.water, unit: "", digits: 0, weight: true },

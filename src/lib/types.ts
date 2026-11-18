@@ -12,10 +12,14 @@ export interface Formula {
   sizing: SizingMode;
   /** Grams of total flour (used when sizing === "flour"). */
   flourWeight: number;
+  /** Optional name for the main flour, e.g. "Caputo Pizzeria". Empty = "Flour". */
+  baseFlourName: string;
   /** Share of the total flour that is a second flour, in percent. 0 = single flour. */
   flour2Pct: number;
-  /** Flour id from lib/flours.ts for that second flour. */
+  /** Flour id from lib/flours.ts for that second flour, or "custom". */
   flour2Type: string;
+  /** Name used when flour2Type is "custom". */
+  flour2Name: string;
   ballCount: number;
   /** Grams per dough ball. */
   ballWeight: number;
@@ -23,6 +27,8 @@ export interface Formula {
   /** Baker's percentages, all relative to total flour. */
   hydration: number;
   salt: number;
+  /** Baker's % of diastatic malt powder, relative to total flour. */
+  diastaticMalt: number;
 
   leavenMode: LeavenMode;
   starterPct: number;

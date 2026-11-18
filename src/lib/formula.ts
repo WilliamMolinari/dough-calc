@@ -1,4 +1,4 @@
-import { FLOUR_TYPES } from "./flours";
+import { FLOUR_NAME_MAX, FLOUR_TYPES } from "./flours";
 import { clamp } from "./format";
 import { OVEN_PROFILES } from "./ovens";
 import { DEFAULT_FORMULA, STYLES } from "./presets";
@@ -11,6 +11,7 @@ const NUMBER_BOUNDS: Partial<Record<keyof Formula, [number, number]>> = {
   ballWeight: [40, 1200],
   hydration: [30, 120],
   salt: [0, 12],
+  diastaticMalt: [0, 2],
   starterPct: [0, 100],
   yeastPct: [0, 8],
   prefermentPct: [0, 90],
@@ -28,6 +29,11 @@ const LEAVEN = ["sourdough", "yeast", "preferment"] as const;
 const YEAST = ["idy", "ady", "fresh"] as const;
 const PREFERMENT = ["poolish", "biga"] as const;
 const SWEETENER = ["none", "sugar", "honey", "malt"] as const;
+
+function cleanFlourName(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/\s+/g, " ").trim().slice(0, FLOUR_NAME_MAX);
+}
 
 function sanitizeStartTime(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -82,6 +88,8 @@ export function sanitizeFormula(raw: unknown): Formula {
   ) {
     next.ovenProfile = input.ovenProfile;
   }
+  next.baseFlourName = cleanFlourName(input.baseFlourName);
+  next.flour2Name = cleanFlourName(input.flour2Name);
   const startTime = sanitizeStartTime(input.startTime);
   if (startTime) next.startTime = startTime;
   if (typeof input.autoLeaven === "boolean") next.autoLeaven = input.autoLeaven;

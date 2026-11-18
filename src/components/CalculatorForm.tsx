@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { DoughMath } from "../lib/calc";
 import { yeastForType } from "../lib/calc";
-import { FLOUR_TYPES, getFlourType } from "../lib/flours";
+import { CUSTOM_FLOUR_ID, FLOUR_TYPES, flourLabel, getFlourType } from "../lib/flours";
 import { fmtWeight, round, toUnit, G_PER_OZ, clamp } from "../lib/format";
 import { fmtTemp, tempForInput, tempFromInput, tempSuffix } from "../lib/temperature";
 import type { Formula, SweetenerKind, Unit, YeastType } from "../lib/types";
@@ -199,6 +199,19 @@ export function CalculatorForm({
           )}
         </div>
 
+        <label className="mt-3 flex items-center gap-2 rounded-xl border border-white/8 bg-black/20 px-3 py-2 focus-within:border-ember/50">
+          <Wheat className="h-3.5 w-3.5 shrink-0 text-cream/25" />
+          <input
+            type="text"
+            value={formula.baseFlourName}
+            onChange={(event) => set("baseFlourName", event.target.value.slice(0, 40))}
+            maxLength={40}
+            placeholder="Name your flour (optional) — e.g. Caputo Pizzeria"
+            aria-label="Flour name"
+            className="w-full min-w-0 bg-transparent text-[12px] text-cream outline-none placeholder:text-cream/25"
+          />
+        </label>
+
         <div className="mt-4 rounded-2xl border border-white/8 bg-black/20 p-3">
           <Toggle
             label="Blend a second flour"
@@ -229,6 +242,17 @@ export function CalculatorForm({
                   );
                 })}
               </div>
+              {formula.flour2Type === CUSTOM_FLOUR_ID && (
+                <input
+                  type="text"
+                  value={formula.flour2Name}
+                  onChange={(event) => set("flour2Name", event.target.value.slice(0, 40))}
+                  maxLength={40}
+                  placeholder="Name the second flour — e.g. Stone-ground wholemeal"
+                  aria-label="Second flour name"
+                  className="w-full rounded-lg border border-white/10 bg-black/30 px-2.5 py-2 text-[11.5px] text-cream outline-none placeholder:text-cream/25 focus:border-ember/50"
+                />
+              )}
               <SliderField
                 label="Second flour share"
                 value={formula.flour2Pct}
@@ -237,9 +261,10 @@ export function CalculatorForm({
                 max={50}
                 step={5}
                 suffix="%"
-                hint={`${fmtWeight(math.flourSecondary, unit)} ${getFlourType(
+                hint={`${fmtWeight(math.flourSecondary, unit)} ${flourLabel(
                   formula.flour2Type,
-                ).label.toLowerCase()} + ${fmtWeight(
+                  formula.flour2Name,
+                ).toLowerCase()} + ${fmtWeight(
                   Math.max(0, math.flour - math.flourSecondary),
                   unit,
                 )} base flour of ${fmtWeight(math.flour, unit)} total.`}
@@ -276,6 +301,16 @@ export function CalculatorForm({
             step={0.1}
             suffix="%"
             hint="2.5% is the pizza sweet spot; below 1.8% tastes flat."
+          />
+          <SliderField
+            label="Diastatic malt"
+            value={formula.diastaticMalt}
+            onChange={(value) => set("diastaticMalt", round(value, 2))}
+            min={0}
+            max={1}
+            step={0.05}
+            suffix="%"
+            hint="Enzyme-active malt powder: 0.1–0.5% feeds the yeast and deepens browning. Not the same as malt extract."
           />
         </div>
 
