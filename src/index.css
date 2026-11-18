@@ -17,10 +17,136 @@
   --color-violet: #a78bfa;
 }
 
-:root {
+/*
+ * Theme tokens. The dark block also serves a nested data-theme="dark" scope, so
+ * an immersive panel can stay dark inside the light theme.
+ */
+:root,
+[data-theme="dark"] {
   color-scheme: dark;
+  --color-cream: #f4efe6;
+  --color-white: #ffffff;
+  --color-ink: #07070a;
+  --color-ink-2: #0b0b11;
+  --color-ember: #ff7a3d;
+  --color-ember-2: #ffb066;
+  --color-hot: #ff4d6d;
+  --color-lime: #c6f45f;
+  --color-sky: #79c9ff;
+  --color-violet: #a78bfa;
+
   --line: rgba(255, 255, 255, 0.085);
   --muted: rgba(244, 239, 230, 0.52);
+
+  --dl-page: #07070a;
+  --dl-body-text: #f4efe6;
+  --dl-app-bg:
+    radial-gradient(900px 600px at 82% -8%, rgba(255, 122, 61, 0.16), transparent 62%),
+    radial-gradient(760px 640px at 4% 4%, rgba(255, 77, 109, 0.08), transparent 60%),
+    radial-gradient(1100px 700px at 50% 110%, rgba(167, 139, 250, 0.09), transparent 65%),
+    #07070a;
+  --dl-noise: 0.035;
+  --dl-grid: rgba(255, 255, 255, 0.04);
+  --dl-glass-bg: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.062),
+    rgba(255, 255, 255, 0.018) 46%,
+    rgba(255, 255, 255, 0.03)
+  );
+  --dl-glass-border: rgba(255, 255, 255, 0.09);
+  --dl-glass-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.06) inset, 0 24px 60px -30px rgba(0, 0, 0, 0.9);
+  --dl-soft-bg: rgba(255, 255, 255, 0.035);
+  --dl-soft-border: rgba(255, 255, 255, 0.07);
+  --dl-inset-bg: rgba(0, 0, 0, 0.22);
+  --dl-inset-border: rgba(255, 255, 255, 0.06);
+  --dl-inset-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  --dl-hairline: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.12), transparent);
+  --dl-chat-bg:
+    radial-gradient(120% 55% at 100% 0%, rgba(255, 122, 61, 0.1), transparent 62%),
+    linear-gradient(180deg, #100d11 0%, #0b0b11 42%, #08080d 100%);
+  --dl-track: rgba(255, 255, 255, 0.12);
+  --dl-thumb: #fff7ee;
+  --dl-scroll: rgba(255, 255, 255, 0.12);
+  --dl-scroll-hover: rgba(255, 255, 255, 0.22);
+  --dl-select-bg: rgba(255, 122, 61, 0.32);
+  --dl-select-text: #ffffff;
+  --dl-scrim: rgba(0, 0, 0, 0.7);
+  --dl-time-filter: invert(1) opacity(0.45);
+  --dl-shimmer: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --color-cream: #2c2118;
+  --color-white: #3a2a1d;
+  --color-ink: #fffdf9;
+  --color-ink-2: #f4e9da;
+  --color-ember: #c2410c;
+  --color-ember-2: #9a3412;
+  --color-hot: #be123c;
+  --color-lime: #4d7c0f;
+  --color-sky: #0369a1;
+  --color-violet: #6d28d9;
+
+  --line: rgba(60, 40, 24, 0.12);
+  --muted: rgba(44, 33, 24, 0.62);
+
+  --dl-page: #f7f1e6;
+  --dl-body-text: #2c2118;
+  --dl-app-bg:
+    radial-gradient(900px 600px at 82% -8%, rgba(255, 122, 61, 0.18), transparent 62%),
+    radial-gradient(760px 640px at 4% 4%, rgba(255, 77, 109, 0.1), transparent 60%),
+    radial-gradient(1100px 700px at 50% 110%, rgba(167, 139, 250, 0.12), transparent 65%),
+    #f8f2e8;
+  --dl-noise: 0.03;
+  --dl-grid: rgba(60, 40, 24, 0.055);
+  --dl-glass-bg: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(255, 255, 255, 0.72) 46%,
+    rgba(255, 253, 249, 0.88)
+  );
+  --dl-glass-border: rgba(66, 45, 28, 0.14);
+  --dl-glass-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.9) inset, 0 22px 50px -34px rgba(86, 55, 24, 0.45);
+  --dl-soft-bg: rgba(66, 45, 28, 0.05);
+  --dl-soft-border: rgba(66, 45, 28, 0.1);
+  --dl-inset-bg: rgba(66, 45, 28, 0.06);
+  --dl-inset-border: rgba(66, 45, 28, 0.1);
+  --dl-inset-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  --dl-hairline: linear-gradient(to right, transparent, rgba(66, 45, 28, 0.18), transparent);
+  --dl-chat-bg:
+    radial-gradient(120% 55% at 100% 0%, rgba(255, 122, 61, 0.12), transparent 62%),
+    linear-gradient(180deg, #fffaf2 0%, #fdf6ea 42%, #f9f1e4 100%);
+  --dl-track: rgba(66, 45, 28, 0.16);
+  --dl-thumb: #fffdf8;
+  --dl-scroll: rgba(66, 45, 28, 0.22);
+  --dl-scroll-hover: rgba(66, 45, 28, 0.34);
+  --dl-select-bg: rgba(255, 122, 61, 0.24);
+  --dl-select-text: #2c2118;
+  --dl-scrim: rgba(44, 33, 24, 0.38);
+  --dl-time-filter: opacity(0.55);
+  --dl-shimmer: linear-gradient(
+    90deg,
+    rgba(66, 45, 28, 0.05),
+    rgba(66, 45, 28, 0.12),
+    rgba(66, 45, 28, 0.05)
+  );
+}
+
+/* Photo overlays and the kitchen view sit on their own dark imagery, so they keep
+ * the dark palette's text colours whatever the page theme is. */
+[data-on-media] {
+  --color-cream: #f4efe6;
+  --color-white: #ffffff;
+  --color-ink: #07070a;
+  --color-ink-2: #0b0b11;
 }
 
 @layer base {
@@ -36,8 +162,8 @@
   body {
     margin: 0;
     min-height: 100dvh;
-    background-color: #07070a;
-    color: #f4efe6;
+    background-color: var(--dl-page);
+    color: var(--dl-body-text);
     font-family: var(--font-sans);
     font-feature-settings: "ss01" 1, "cv01" 1;
     -webkit-font-smoothing: antialiased;
@@ -53,8 +179,8 @@
   }
 
   ::selection {
-    background: rgba(255, 122, 61, 0.32);
-    color: #fff;
+    background: var(--dl-select-bg);
+    color: var(--dl-select-text);
   }
 
   :where(button, a, input, select, textarea):focus-visible {
@@ -74,7 +200,7 @@
   }
 
   input[type="time"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) opacity(0.45);
+    filter: var(--dl-time-filter);
     cursor: pointer;
   }
 
@@ -86,12 +212,12 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--dl-scroll);
     border-radius: 999px;
-    border: 3px solid #07070a;
+    border: 3px solid var(--dl-page);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.22);
+    background: var(--dl-scroll-hover);
   }
 }
 
@@ -101,11 +227,7 @@
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background:
-    radial-gradient(900px 600px at 82% -8%, rgba(255, 122, 61, 0.16), transparent 62%),
-    radial-gradient(760px 640px at 4% 4%, rgba(255, 77, 109, 0.08), transparent 60%),
-    radial-gradient(1100px 700px at 50% 110%, rgba(167, 139, 250, 0.09), transparent 65%),
-    #07070a;
+  background: var(--dl-app-bg);
 }
 
 .app-bg::after {
@@ -113,53 +235,48 @@
   position: absolute;
   inset: -20%;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  opacity: 0.035;
+  opacity: var(--dl-noise);
   pointer-events: none;
 }
 
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, var(--dl-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--dl-grid) 1px, transparent 1px);
   background-size: 72px 72px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent 75%);
 }
 
 /* Surfaces */
 .glass {
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.062), rgba(255, 255, 255, 0.018) 46%, rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--dl-glass-bg);
+  border: 1px solid var(--dl-glass-border);
   backdrop-filter: blur(22px) saturate(130%);
   -webkit-backdrop-filter: blur(22px) saturate(130%);
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.06) inset,
-    0 24px 60px -30px rgba(0, 0, 0, 0.9);
+  box-shadow: var(--dl-glass-shadow);
 }
 
 .glass-soft {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--dl-soft-bg);
+  border: 1px solid var(--dl-soft-border);
 }
 
 .glass-inset {
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  background: var(--dl-inset-bg);
+  border: 1px solid var(--dl-inset-border);
+  box-shadow: var(--dl-inset-shadow);
 }
 
 /* Chat drawer needs a near-opaque base so long answers stay readable. */
 .chat-panel {
-  background:
-    radial-gradient(120% 55% at 100% 0%, rgba(255, 122, 61, 0.1), transparent 62%),
-    linear-gradient(180deg, #100d11 0%, #0b0b11 42%, #08080d 100%);
+  background: var(--dl-chat-bg);
   backdrop-filter: blur(28px) saturate(130%);
   -webkit-backdrop-filter: blur(28px) saturate(130%);
 }
 
 .hairline {
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.12), transparent);
+  background: var(--dl-hairline);
 }
 
 .text-gradient {
@@ -167,6 +284,10 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+[data-theme="light"] .text-gradient {
+  background-image: linear-gradient(96deg, #b45309 0%, #c2410c 38%, #be123c 78%, #4d7c0f 130%);
 }
 
 .btn-ember {
@@ -220,13 +341,13 @@ input[type="range"].dl-range {
 input[type="range"].dl-range::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--track, rgba(255, 255, 255, 0.12));
+  background: var(--track, var(--dl-track));
 }
 
 input[type="range"].dl-range::-moz-range-track {
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--dl-track);
 }
 
 input[type="range"].dl-range::-moz-range-progress {
@@ -242,7 +363,7 @@ input[type="range"].dl-range::-webkit-slider-thumb {
   width: 18px;
   margin-top: -6px;
   border-radius: 999px;
-  background: #fff7ee;
+  background: var(--dl-thumb);
   border: 3px solid #ff7a3d;
   box-shadow:
     0 0 0 4px rgba(255, 122, 61, 0.14),
@@ -261,7 +382,7 @@ input[type="range"].dl-range::-moz-range-thumb {
   height: 16px;
   width: 16px;
   border-radius: 999px;
-  background: #fff7ee;
+  background: var(--dl-thumb);
   border: 3px solid #ff7a3d;
   box-shadow: 0 0 0 4px rgba(255, 122, 61, 0.14);
 }
@@ -291,7 +412,7 @@ input[type="range"].dl-range::-moz-range-thumb {
 }
 
 .shimmer {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+  background: var(--dl-shimmer);
   background-size: 200% 100%;
   animation: shimmer 2.2s linear infinite;
 }

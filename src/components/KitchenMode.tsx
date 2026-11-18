@@ -353,6 +353,7 @@ export function KitchenMode({
       role="dialog"
       aria-modal="true"
       aria-label={`Kitchen mode for ${title}`}
+      data-on-media
       className="fixed inset-0 z-[70] flex flex-col bg-[#07070a]"
     >
       <div className="border-b border-white/10 bg-gradient-to-r from-ember/[0.12] via-transparent to-hot/[0.08] px-4 py-3 sm:px-6">

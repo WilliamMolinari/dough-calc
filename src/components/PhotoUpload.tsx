@@ -112,6 +112,7 @@ export function PhotoUpload({
           {photos.map((photo, index) => (
             <div
               key={`${photo.slice(-24)}-${index}`}
+              data-on-media
               className="group relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-black/30"
             >
               <img

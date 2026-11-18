@@ -343,7 +343,10 @@ export function Journal({
                   className="block w-full text-left"
                   aria-label={`Open bake ${bake.name}`}
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden bg-black/40">
+                  <div
+                    data-on-media
+                    className="relative aspect-[16/10] overflow-hidden bg-black/40"
+                  >
                     {bake.photos?.length ? (
                       <img
                         src={photoSrc(bake.photos[0])}

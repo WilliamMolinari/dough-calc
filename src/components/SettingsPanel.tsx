@@ -1,6 +1,15 @@
 import { useState } from "react";
-import { Check, Database, HardDriveDownload, Scale, Thermometer, Trash2 } from "lucide-react";
+import {
+  Check,
+  Database,
+  HardDriveDownload,
+  Palette,
+  Scale,
+  Thermometer,
+  Trash2,
+} from "lucide-react";
 import { ActionButton, Badge, Card, SectionHeading, cx } from "./ui";
+import type { ThemeMode } from "../lib/theme";
 import type { TempUnit, Unit } from "../lib/types";
 
 function Choice({
@@ -45,6 +54,8 @@ function Choice({
  * itself stays in the calculator — nothing here changes the dough.
  */
 export function SettingsPanel({
+  theme,
+  onThemeChange,
   unit,
   onUnitChange,
   tempUnit,
@@ -54,6 +65,8 @@ export function SettingsPanel({
   onOpenBackup,
   onClearAll,
 }: {
+  theme: ThemeMode;
+  onThemeChange: (theme: ThemeMode) => void;
   unit: Unit;
   onUnitChange: (unit: Unit) => void;
   tempUnit: TempUnit;
@@ -71,9 +84,36 @@ export function SettingsPanel({
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
+      <Card className="p-4 sm:p-5 lg:col-span-2">
+        <SectionHeading
+          eyebrow="01 — Appearance"
+          title="Theme"
+          description="Dark for a dim kitchen, light for daylight. The dough maths is the same either way."
+          icon={Palette}
+          action={<Badge tone="neutral">{theme}</Badge>}
+        />
+        <div role="group" aria-label="Theme" className="grid gap-2 sm:grid-cols-2">
+          <Choice
+            active={theme === "dark"}
+            title="Dark"
+            note="Ember accents on near-black glass — the app's late-night look."
+            onSelect={() => onThemeChange("dark")}
+          />
+          <Choice
+            active={theme === "light"}
+            title="Light"
+            note="Warm paper surfaces with dark ink, for a bright kitchen."
+            onSelect={() => onThemeChange("light")}
+          />
+        </div>
+        <p className="mt-3 font-mono text-[9.5px] leading-relaxed text-cream/25">
+          Applies to the whole app and is remembered on this device.
+        </p>
+      </Card>
+
       <Card className="p-4 sm:p-5">
         <SectionHeading
-          eyebrow="01 — Units"
+          eyebrow="02 — Units"
           title="Weights"
           description="Recipe amounts, journal cards, backups and exports all follow this."
           icon={Scale}
@@ -97,7 +137,7 @@ export function SettingsPanel({
 
       <Card className="p-4 sm:p-5">
         <SectionHeading
-          eyebrow="02 — Temperature"
+          eyebrow="03 — Temperature"
           title="Oven dials"
           description="Timelines, oven profiles and the journal's temperature fields use this reading."
           icon={Thermometer}
@@ -124,7 +164,7 @@ export function SettingsPanel({
 
       <Card className="p-4 sm:p-5 lg:col-span-2">
         <SectionHeading
-          eyebrow="03 — Data"
+          eyebrow="04 — Data"
           title="This browser"
           description="The journal lives here, not on a server. Take a copy before you clear anything."
           icon={Database}

@@ -484,7 +484,7 @@ export function Modal({
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            className="absolute inset-0 bg-[var(--dl-scrim)] backdrop-blur-md"
             aria-hidden
           />
           <motion.div

@@ -165,7 +165,10 @@ export function BakeDetail({
       <div className="space-y-4">
         {/* Gallery */}
         <div>
-          <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+          <div
+            data-on-media
+            className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-white/10 bg-black/40"
+          >
             {photos.length > 0 ? (
               <>
                 <img

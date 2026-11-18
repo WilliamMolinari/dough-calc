@@ -32,6 +32,7 @@ import {
   loadBakes,
   loadFormula,
   loadTempUnit,
+  loadTheme,
   loadUnit,
   measureStoredBytes,
   readStored,
@@ -48,6 +49,7 @@ import { materializePhotos } from "./lib/photoFiles";
 import { deleteBakeEntry, duplicateBakeEntry, nextTrialName, rootIdOf } from "./lib/journal";
 import { adjustFormula, trialChangeLabel, type TrialVariable } from "./lib/experiments";
 import { normalizeOutcomeTags } from "./lib/outcomes";
+import { applyTheme, type ThemeMode } from "./lib/theme";
 import type {
   BakeEntry,
   Formula,
@@ -388,6 +390,7 @@ export default function App() {
   const [formula, setFormula] = useState<Formula>(() => loadFormula());
   const [unit, setUnit] = useState<Unit>(() => loadUnit());
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => loadTempUnit());
+  const [theme, setTheme] = useState<ThemeMode>(() => loadTheme());
   const [bakes, setBakes] = useState<BakeEntry[]>(() => loadBakes());
   const [storageInfo, setStorageInfo] = useState(() => ({
     bytes: measureStoredBytes(),
@@ -507,6 +510,11 @@ export default function App() {
   useEffect(() => {
     writeStored(STORAGE_KEYS.tempUnit, tempUnit);
   }, [tempUnit]);
+
+  useEffect(() => {
+    applyTheme(theme);
+    writeStored(STORAGE_KEYS.theme, theme);
+  }, [theme]);
 
   // Two tabs both writing localStorage would silently lose entries. Surface it
   // instead of auto-reloading, which could discard what this tab is editing.
@@ -1190,6 +1198,8 @@ export default function App() {
             />
           ) : tab === "settings" ? (
             <SettingsPanel
+              theme={theme}
+              onThemeChange={setTheme}
               unit={unit}
               onUnitChange={setUnit}
               tempUnit={tempUnit}

@@ -2,6 +2,7 @@ import { clamp } from "./format";
 import { sanitizeFormula } from "./formula";
 import { repairLineage } from "./journal";
 import { normalizeOutcomeTags } from "./outcomes";
+import { normalizeTheme, type ThemeMode } from "./theme";
 import type {
   BakeActuals,
   BakeEntry,
@@ -84,6 +85,7 @@ export const STORAGE_KEYS = {
   kitchenChecks: "doughlab.kitchenChecks.v1",
   kitchenLargeText: "doughlab.kitchenLargeText.v1",
   onboarded: "doughlab.onboarded.v1",
+  theme: "doughlab.theme.v1",
 } as const;
 
 export function readStored<T>(key: string, fallback: T): T {
@@ -123,6 +125,10 @@ export function loadUnit(): Unit {
 
 export function loadTempUnit(): TempUnit {
   return readStored<unknown>(STORAGE_KEYS.tempUnit, "c") === "f" ? "f" : "c";
+}
+
+export function loadTheme(): ThemeMode {
+  return normalizeTheme(readStored<unknown>(STORAGE_KEYS.theme, "dark"));
 }
 
 function number(value: unknown, fallback = 0): number {
