@@ -38,11 +38,11 @@ That's it. Everything below is optional detail.
 Real screenshots of the app at desktop (1280 px) and phone (390 px) widths. The bakes in the journal
 are example entries, not someone's real dinner.
 
-| **The calculator** | **The journal** | **Photo read** |
+| **The calculator** | **The journal** | **Backup & restore** |
 | --- | --- | --- |
-| <a href="docs/screenshots/calculator-desktop.png"><img src="docs/screenshots/calculator-desktop.png" width="300" alt="DoughLab calculator on a desktop browser, with style presets, batch sizing and the live weigh-and-bake panel"></a> | <a href="docs/screenshots/journal-desktop.png"><img src="docs/screenshots/journal-desktop.png" width="300" alt="DoughLab journal on a desktop browser, showing saved bake cards with photos, ratings and filters"></a> | <a href="docs/screenshots/photo-read-desktop.png"><img src="docs/screenshots/photo-read-desktop.png" width="240" alt="A saved bake open on desktop, with a photo read listing what the model saw, suggested tags and scores"></a> |
-| <a href="docs/screenshots/calculator-phone.png"><img src="docs/screenshots/calculator-phone.png" width="150" alt="DoughLab calculator on a phone, with the same style presets and batch controls stacked"></a> | <a href="docs/screenshots/journal-phone.png"><img src="docs/screenshots/journal-phone.png" width="150" alt="DoughLab journal on a phone, showing the stats row, insights and bake list"></a> | <a href="docs/screenshots/photo-read-phone.png"><img src="docs/screenshots/photo-read-phone.png" width="150" alt="The photo read card on a phone: saved read, observations, tags and Apply to log"></a> |
-| Pick a style, say how much dough you want, and the panel on the right shows exactly what to weigh plus the start-to-oven schedule. On a phone the same controls stack in the same order. | Every saved bake becomes a card with its photo, stars, style and date. Filter by style or “awaiting rating”, open one to compare or carry forward, and use **Insights** to look for patterns across bakes. | Once you tap Analyze, the app lists what it can see in the photo and suggests tags and scores. **Apply to log** copies them onto the bake — until then, nothing changes. |
+| <a href="docs/screenshots/calculator-desktop.png"><img src="docs/screenshots/calculator-desktop.png" width="300" alt="DoughLab calculator on a desktop browser: the Detroit preset loaded in Pan size mode, with pan dimensions, dough per square centimetre and the live weigh-and-bake panel"></a> | <a href="docs/screenshots/journal-desktop.png"><img src="docs/screenshots/journal-desktop.png" width="300" alt="DoughLab journal on a desktop browser: three saved bakes, filters, ratings, a photographed bake and the browser storage meter"></a> | <a href="docs/screenshots/backup-desktop.png"><img src="docs/screenshots/backup-desktop.png" width="300" alt="The backup and restore panel on desktop: export, three restore points, file restore and the guarded Clear all data section"></a> |
+| <a href="docs/screenshots/calculator-phone.png"><img src="docs/screenshots/calculator-phone.png" width="150" alt="The calculator on a 390 px phone: the three batch sizing modes with pan dimensions, dough per pan and the reset button"></a> | <a href="docs/screenshots/journal-phone.png"><img src="docs/screenshots/journal-phone.png" width="150" alt="The journal on a phone sorted by highest rated, showing the photographed bake with its stars and notes"></a> | <a href="docs/screenshots/backup-phone.png"><img src="docs/screenshots/backup-phone.png" width="150" alt="The backup panel on a phone, from the export card through the restore points to Clear all data"></a> |
+| Pick a style, then size the batch three ways: by flour, by dough balls, or by **pan size** — a pan's length and width plus dough per cm², so a Detroit tray becomes a real weight instead of a guess. **Reset to defaults** sits beside the batch card, and the right-hand panel shows exactly what to weigh. On a phone the same controls stack in order. | Every bake becomes a card with its photo, stars, style, tags and notes. **CSV** and **Backup** sit in the header, the filters narrow by style or by “awaiting rating”, and the storage meter shows what the journal costs in this browser. | One JSON file holds every bake, photo, rating and note. The same panel lists the **restore points** DoughLab keeps by itself and hides **Clear all data** — which also deletes every pizza — behind a second tap. On a phone those sections stack in the same order. |
 
 ### What the main screens are for
 
@@ -316,6 +316,11 @@ scripts/             Icon generation
 
 All AI features require your own key, run from the client, and never happen without an explicit tap.
 See [Optional AI configuration](#optional-ai-configuration) for the cost and key-exposure trade-offs.
+
+![A saved photo read on a desktop screen](docs/screenshots/photo-read-desktop.png)
+
+*Once you tap Analyze, the saved photo read lists what the model could see, the tags it suggests
+and the scores you can apply. Nothing changes on the bake until you tap Apply to log.*
 
 ## Everyday tasks
 
