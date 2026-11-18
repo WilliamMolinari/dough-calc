@@ -12,6 +12,7 @@ import {
   NotebookPen,
   Pizza,
   Scale,
+  Settings2,
   Sparkles,
   Star,
   Thermometer,
@@ -72,14 +73,16 @@ import { StarterPlanner } from "./components/StarterPlanner";
 import { FirstRun } from "./components/FirstRun";
 import { BackupModal } from "./components/BackupModal";
 import { KitchenMode } from "./components/KitchenMode";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { Badge, Card, cx } from "./components/ui";
 
-type Tab = "calculator" | "journal" | "plan";
+type Tab = "calculator" | "journal" | "plan" | "settings";
 
 const TABS: Array<{ id: Tab; label: string; icon: typeof Calculator }> = [
   { id: "calculator", label: "Calculator", icon: Calculator },
   { id: "journal", label: "Journal", icon: NotebookPen },
   { id: "plan", label: "Plan", icon: CalendarClock },
+  { id: "settings", label: "Settings", icon: Settings2 },
 ];
 
 function newBakeId(): string {
@@ -161,14 +164,22 @@ function Hero({
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone="ember">
                 <Sparkles size={10} />
-                {tab === "calculator" ? "Dough engine" : tab === "journal" ? "Bake journal" : "Dinner plan"}
+                {tab === "calculator"
+                  ? "Dough engine"
+                  : tab === "journal"
+                    ? "Bake journal"
+                    : tab === "plan"
+                      ? "Dinner plan"
+                      : "Settings"}
               </Badge>
               <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-cream/25">
                 {tab === "calculator"
                   ? "baker's percentages · live"
                   : tab === "journal"
                     ? "ratings · photos · notes"
-                    : "serve time · oven throughput"}
+                    : tab === "plan"
+                      ? "serve time · oven throughput"
+                      : "units · temperature · data"}
               </span>
             </div>
 
@@ -188,12 +199,20 @@ function Hero({
                   remembered.
                 </span>
               </h1>
-            ) : (
+            ) : tab === "plan" ? (
               <h1 className="mt-3.5 text-[34px] font-semibold leading-[0.98] tracking-[-0.03em] text-cream sm:text-[52px]">
                 Dinner,
                 <br />
                 <span className="text-gradient font-serif text-[39px] font-normal italic leading-[1.05] tracking-[-0.01em] sm:text-[58px]">
                   on time.
+                </span>
+              </h1>
+            ) : (
+              <h1 className="mt-3.5 text-[34px] font-semibold leading-[0.98] tracking-[-0.03em] text-cream sm:text-[52px]">
+                Your kitchen,
+                <br />
+                <span className="text-gradient font-serif text-[39px] font-normal italic leading-[1.05] tracking-[-0.01em] sm:text-[58px]">
+                  your numbers.
                 </span>
               </h1>
             )}
@@ -203,7 +222,9 @@ function Hero({
                 ? `Hydration, leaven, temperature and time — recalculated the moment you move a slider. Currently tuned for ${style.name}.`
                 : tab === "journal"
                   ? "Rate the crust, log the crumb, keep the photos. Your next batch starts from what actually worked."
-                  : "Start from the table and work backwards. One oven, every pizza timed, nothing launched cold."}
+                  : tab === "plan"
+                    ? "Start from the table and work backwards. One oven, every pizza timed, nothing launched cold."
+                    : "Grams or ounces, Celsius or Fahrenheit, and every bake stored on this device. The dough itself stays in the calculator."}
             </p>
           </div>
 
@@ -244,7 +265,7 @@ function Hero({
                 />
                 <HeroStat label="Photos" value={String(photos)} sub="on device" icon={Sparkles} />
               </>
-            ) : (
+            ) : tab === "plan" ? (
               <>
                 <HeroStat
                   label="Oven"
@@ -264,6 +285,22 @@ function Hero({
                   sub="per pie"
                   icon={Clock3}
                 />
+              </>
+            ) : (
+              <>
+                <HeroStat
+                  label="Weights"
+                  value={unit === "g" ? "g" : "oz"}
+                  sub={unit === "g" ? "grams" : "ounces"}
+                  icon={Scale}
+                />
+                <HeroStat
+                  label="Oven dials"
+                  value={tempUnit === "c" ? "°C" : "°F"}
+                  sub={tempUnit === "c" ? "celsius" : "fahrenheit"}
+                  icon={Thermometer}
+                />
+                <HeroStat label="Bakes" value={String(bakes.length)} sub="saved here" icon={Pizza} />
               </>
             )}
           </div>
@@ -336,7 +373,7 @@ function MobileTab({
       onClick={onChange}
       aria-current={active ? "page" : undefined}
       className={cx(
-        "flex min-w-[74px] flex-col items-center gap-1 rounded-xl px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.12em] transition-colors",
+        "flex min-w-[58px] flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.12em] transition-colors",
         active ? "text-ember" : "text-cream/35",
       )}
     >
@@ -1151,6 +1188,17 @@ export default function App() {
               onMarkBaked={markBaked}
               onMovePhotos={movePhotosToFolder}
             />
+          ) : tab === "settings" ? (
+            <SettingsPanel
+              unit={unit}
+              onUnitChange={setUnit}
+              tempUnit={tempUnit}
+              onTempChange={setTempUnit}
+              bakeCount={bakes.length}
+              photoCount={bakes.reduce((sum, bake) => sum + bake.photos.length, 0)}
+              onOpenBackup={() => setBackupOpen(true)}
+              onClearAll={wipeAllData}
+            />
           ) : (
             <div className="space-y-4">
               <DinnerPlanner
@@ -1203,6 +1251,11 @@ export default function App() {
               tab={TABS[2]}
               active={tab === "plan"}
               onChange={() => changeTab("plan")}
+            />
+            <MobileTab
+              tab={TABS[3]}
+              active={tab === "settings"}
+              onChange={() => changeTab("settings")}
             />
           </div>
         </div>

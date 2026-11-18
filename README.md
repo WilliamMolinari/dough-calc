@@ -51,11 +51,13 @@ are example entries, not someone's real dinner.
 | **Calculator** | Choose a style, set how much dough, adjust the recipe, read the weights and the timeline. |
 | **Journal** | Every bake you saved: ratings, photos, notes, comparisons, and **Insights** across them. |
 | **Plan** | Work backwards from a serve time: how much dough, when to start, oven order — plus a starter build with feed times and amounts. |
+| **Settings** | Grams or ounces, Celsius or Fahrenheit, backup and restore, and **Clear all data**. The dough variables stay in the calculator. |
 | **Bake Sommelier** (round button, bottom right) | Ask questions about your bakes; optionally attach a photo of one. |
 
 ### The only controls you need at first
 
-- **g / oz** and **°C / °F** in the header switch units everywhere. Nothing is converted or lost.
+- **g / oz** and **°C / °F** switch units everywhere — in the header for a quick flip, or on the
+  **Settings** tab. Nothing is converted or lost.
 - **Sizing** has three modes. **Flour** → start from a bag of flour. **Dough balls** → number of
   pizzas and grams per ball. **Pan size** → the pan's length and width plus **dough per pan**, which
   is what actually sets the depth of a Detroit or focaccia bake.
