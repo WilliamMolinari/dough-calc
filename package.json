@@ -14,7 +14,8 @@
     "typecheck": "tsc -b --noEmit",
     "desktop": "npm run build && electron .",
     "desktop:dev": "electron . --dev",
-    "desktop:build": "npm run build && electron-builder --mac"
+    "desktop:build": "npm run build && electron-builder --mac",
+    "desktop:build:win": "npm run build && electron-builder --win"
   },
   "dependencies": {
     "@google/genai": "^3.4.0",
@@ -60,6 +61,27 @@
       "category": "public.app-category.lifestyle",
       "icon": "public/icon-512.png",
       "identity": null
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }
