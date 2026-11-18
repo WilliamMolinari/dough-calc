@@ -8,6 +8,93 @@ No account, no server and no database: formulas, bakes and photos live in the br
 desktop app's own storage. The only network calls are Google Fonts and, if you add your own Gemini
 API key, the AI sommelier / photo reading.
 
+## New here? Start with this
+
+You don't need to understand pizza science to use DoughLab. The app fills in the numbers for you; you
+only have to say roughly what you want and press the buttons in order.
+
+### The 60-second version
+
+1. **Open the app** (the website, or the desktop app — they are the same app).
+2. **Pick a style** under **Start from a style** — Neapolitan, New York, New Haven, Detroit… Each card
+   loads a complete, sensible recipe for that kind of pizza.
+3. **Say how much you're making** with **I know my dough balls**: 4 balls at 250 g is four 12-inch
+   pizzas. Not sure? Use the table below.
+4. **Leave hydration, salt and yeast alone** for your first bake. The preset is already balanced.
+5. **Follow the timeline** at the bottom of the calculator: mix → folds → bulk → ball and fridge →
+   temper → preheat → bake. The **Weigh now** list tells you exactly what to put on the scale.
+6. **Tap Kitchen mode** when you start cooking: big steps, timers and alarms for someone with floury
+   hands.
+7. **After eating, tap Save this bake to the journal.** Add a photo, a score and one sentence about
+   what happened. That's the habit that makes the next pizza better.
+
+That's it. Everything below is optional detail.
+
+### What the main screens are for
+
+| Screen | What you do there |
+| --- | --- |
+| **Calculator** | Choose a style, set how much dough, adjust the recipe, read the weights and the timeline. |
+| **Journal** | Every bake you saved: ratings, photos, notes, comparisons, and **Insights** across them. |
+| **Plan** | Work backwards from a serve time: how much dough, when to start, oven order. |
+| **Bake Sommelier** (round button, bottom right) | Ask questions about your bakes; optionally attach a photo of one. |
+
+### The only controls you need at first
+
+- **g / oz** and **°C / °F** in the header switch units everywhere. Nothing is converted or lost.
+- **I know my dough balls** → number of pizzas and grams per ball. **I know my flour** → start from a
+  bag of flour instead.
+- **Hydration** = water as a percentage of the flour. 63% means 63 g water per 100 g flour. Higher is
+  wetter and airier; lower is easier to handle.
+- **Salt** = 2–3% of the flour. 2.5% is the usual pizza level.
+- **Leavening** = what makes it rise. **Yeast** is easiest; **Sourdough** and **Pre-ferment** are for
+  more flavour and need more time. **Auto dose from the schedule** sets the dose to match your timings.
+- **Bulk / Cold retard / Temper** = hours at room temperature, hours in the fridge, hours back at room
+  temperature. The app turns these into a start-to-oven timeline.
+- **Oven** chips = the heat profile. Pick the one closest to your oven or outdoor oven; the preheat time
+  and bake time change with it.
+
+### How much dough per pizza
+
+| Pizza size | Dough per ball |
+| --- | --- |
+| 10 in / 25 cm | 180–220 g |
+| 12 in / 30 cm | 250–280 g |
+| 14 in / 35 cm | 330–380 g |
+| 16 in / 40 cm | 450–500 g |
+| Detroit / pan | 400–500 g per 9×13 in pan |
+
+Rough guide: 2–3 pizzas per adult for a full meal, 1–2 as a starter.
+
+### Words the app uses
+
+| Term | Plain meaning |
+| --- | --- |
+| **Baker's percentage** | Every ingredient as a % of the flour, so recipes scale cleanly. Flour is always 100%. |
+| **Hydration** | Water ÷ flour × 100. The main dial for texture. |
+| **Starter** | A living sourdough culture; here assumed 100% hydration (half flour, half water). |
+| **Poolish / Biga** | A pre-ferment: part of the flour and water left to ferment before the main mix. |
+| **Bulk** | The first rise, before the dough is divided into balls. |
+| **Cold retard** | A slow rise in the fridge; builds flavour and makes the dough easier to shape. |
+| **Temper** | Letting cold dough warm up before stretching, so it doesn't tear. |
+| **Effective hours** | The app's temperature-adjusted fermentation time: fridge hours count for less than room-temperature hours. |
+| **On schedule / Brisk / Slow lane** | How your yeast dose compares with what the timings need. “On schedule” means they match. |
+| **FDT** | Final dough temperature — the temperature of the dough after mixing, which drives fermentation speed. |
+
+### If something goes wrong
+
+| Problem | First thing to try |
+| --- | --- |
+| Dough is too sticky to shape | Drop hydration by 2%, or give it 20 more minutes rest and use wet hands. |
+| Dough tears when stretching | It's cold or under-rested — let it temper longer. |
+| Pale, soft base | Preheat longer and hotter; check the oven profile and give the stone/steel 10 more minutes. |
+| Dense, tight crumb | Ferment longer (more bulk or more cold retard), or raise hydration slightly. |
+| Gummy centre | Underbaked for its thickness: bake a little longer at the same heat, or thinner. |
+| Balls overproofed in the fridge | Shorten the cold retard next time; the journal's **Next time** note is the place to write that down. |
+
+Change **one** thing per bake. The Journal's trial tools are built around that: **Bake this again** copies the
+formula, you change a single value, and the comparison shows what actually moved.
+
 ## Requirements
 
 | Tool | Version |
@@ -209,6 +296,21 @@ scripts/             Icon generation
 
 All AI features require your own key, run from the client, and never happen without an explicit tap.
 See [Optional AI configuration](#optional-ai-configuration) for the cost and key-exposure trade-offs.
+
+## Everyday tasks
+
+- **Install it like an app (phone or desktop browser):** open the site, then use the browser's *Add to
+  Home Screen* / *Install* option. It then opens full-screen and works offline after the first load.
+- **Print or share a recipe:** in the calculator, use **Print** for a recipe card, **PNG** for an image,
+  **Copy** for text, or **Share** for a link that restores the exact formula.
+- **Take it into the kitchen:** **Kitchen mode** shows one large step at a time with timers and alarms;
+  the calendar button exports the whole schedule with reminders.
+- **Keep a backup:** Journal → **Backup** saves one JSON file with every bake and photo. Restore it on
+  another computer or after clearing browser data.
+- **Move photos into a folder (desktop):** in the Journal you can choose a folder; photos are written
+  there as normal image files you can open in Finder or Explorer.
+- **Ask the AI:** add a Gemini key in the sommelier's **AI settings**, then ask about a bake or attach a
+  photo. Without a key the app still does everything else.
 
 ## Troubleshooting
 
