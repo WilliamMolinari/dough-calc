@@ -48,14 +48,15 @@ bar on a phone. The bakes in the journal are example entries, not someone's real
 | <a href="docs/screenshots/calculator-phone.png"><img src="docs/screenshots/calculator-phone.png" width="150" alt="The calculator on a 390 px phone: the three batch sizing modes with pan dimensions, dough per pan and the reset button"></a> | <a href="docs/screenshots/journal-phone.png"><img src="docs/screenshots/journal-phone.png" width="150" alt="The journal on a phone: the search, sort and filter row above the newest bake, then the photographed Margherita with its stars and notes"></a> | <a href="docs/screenshots/backup-phone.png"><img src="docs/screenshots/backup-phone.png" width="150" alt="The backup panel on a phone, from the export card through the restore points to Clear all data"></a> |
 | Pick a style, then size the batch three ways: by flour, by dough balls, or by **pan size** — a pan's length and width plus dough per cm², so a Detroit tray becomes a real weight instead of a guess. **Reset to defaults** sits beside the batch card, and the right-hand panel shows exactly what to weigh. On a phone the same controls stack in order. | Every bake becomes a card with its photo, stars, style, tags and notes. **CSV** and **Backup** sit in the header, the filters narrow by style or by “awaiting rating”, and the storage meter shows what the journal costs in this browser. | One JSON file holds every bake, photo, rating and note. The same panel lists the **restore points** DoughLab keeps by itself and hides **Clear all data** — which also deletes every pizza — behind a second tap. On a phone those sections stack in the same order. |
 
-| **Settings** | **Settings on a phone** |
-| --- | --- |
-| <a href="docs/screenshots/settings-desktop.png"><img src="docs/screenshots/settings-desktop.png" width="300" alt="The Settings tab on a desktop browser: the four-tab header, the Appearance card with its Dark and Light choices, the Weights and Oven dials cards, and a This browser card with backup, bake counts and Clear all data"></a> | <a href="docs/screenshots/settings-phone.png"><img src="docs/screenshots/settings-phone.png" width="150" alt="Settings on a 390 px phone with the four-tab bottom bar: the Appearance card offering Dark or Light, then grams or ounces"></a> |
+| **Settings** | **Settings on a phone** | **Settings in Light mode** |
+| --- | --- | --- |
+| <a href="docs/screenshots/settings-desktop.png"><img src="docs/screenshots/settings-desktop.png" width="300" alt="The Settings tab on a desktop browser: the four-tab header, the Appearance card with its Dark and Light choices, the Weights and Oven dials cards, and a This browser card with backup, bake counts and Clear all data"></a> | <a href="docs/screenshots/settings-phone.png"><img src="docs/screenshots/settings-phone.png" width="150" alt="Settings on a 390 px phone with the four-tab bottom bar: the Appearance card offering Dark or Light, then grams or ounces"></a> | <a href="docs/screenshots/settings-light-desktop.png"><img src="docs/screenshots/settings-light-desktop.png" width="300" alt="The same Settings tab on a desktop browser in Light mode: warm paper surfaces with black text, the Light choice selected, and the same Weights, Oven dials and This browser cards"></a> |
 
 **Settings** gathers the theme, the units and oven dials, the backup and restore panel and
 **Clear all data** in one place, while every dough variable stays in the calculator. The **Appearance**
 card up top switches between **Dark** — the ember-on-black look in these screenshots — and **Light**, a
-warm paper version with black text for a bright kitchen. The choice is remembered on your device.
+warm paper version with black text for a bright kitchen. The third shot is that same tab in **Light**;
+only the colours change, and the choice is remembered on your device.
 
 ### What the main screens are for
 
