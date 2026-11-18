@@ -27,10 +27,11 @@ import { photoSrc } from "../lib/photoFiles";
 import { fmtTemp } from "../lib/temperature";
 import { useTempUnit } from "./TempUnit";
 import { downloadJson, downloadRecipeImage, bakeJson, slugify } from "../lib/exports";
-import type { BakeEntry, Unit } from "../lib/types";
+import type { BakeEntry, Unit, VisionRead } from "../lib/types";
 import { ActionButton, Badge, Modal, Stars, cx } from "./ui";
 import { BakeComparison } from "./BakeComparison";
 import { FermentTimeline } from "./FermentTimeline";
+import { PhotoAnalysis } from "./PhotoAnalysis";
 
 const RATING_ROWS = [
   { key: "crust", label: "Crust" },
@@ -52,6 +53,7 @@ export function BakeDetail({
   onDesignTrial,
   onRate,
   onMarkBaked,
+  onApplyPhotoRead,
   onKitchen,
   onToast,
 }: {
@@ -67,6 +69,7 @@ export function BakeDetail({
   onDesignTrial: (bake: BakeEntry) => void;
   onRate: (bake: BakeEntry, overall: number) => void;
   onMarkBaked: (bake: BakeEntry, baked: boolean) => void;
+  onApplyPhotoRead: (bake: BakeEntry, read: VisionRead) => void;
   onKitchen: (bake: BakeEntry) => void;
   onToast: (message: string, tone?: "success" | "error" | "info") => void;
 }) {
@@ -233,6 +236,21 @@ export function BakeDetail({
             </div>
           )}
         </div>
+
+        <PhotoAnalysis
+          photos={photos}
+          read={bake.vision}
+          context={{
+            bakeName: bake.name,
+            styleName: style.name,
+            formulaSummary: `${bake.formula.hydration}% hydration · ${leavenSummary(
+              bake.formula,
+              math,
+              unit,
+            )} · bulk ${bake.formula.bulkHours} h`,
+          }}
+          onApply={({ read }) => onApplyPhotoRead(bake, read)}
+        />
 
         {/* Meta */}
         <div className="flex flex-wrap items-center gap-1.5">

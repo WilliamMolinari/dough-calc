@@ -40,7 +40,16 @@ import { journalDbSupported, loadJournalFromDb, saveJournalToDb } from "./lib/jo
 import { materializePhotos } from "./lib/photoFiles";
 import { deleteBakeEntry, duplicateBakeEntry, nextTrialName, rootIdOf } from "./lib/journal";
 import { adjustFormula, trialChangeLabel, type TrialVariable } from "./lib/experiments";
-import type { BakeEntry, Formula, TempUnit, Toast, ToastAction, Unit } from "./lib/types";
+import { normalizeOutcomeTags } from "./lib/outcomes";
+import type {
+  BakeEntry,
+  Formula,
+  TempUnit,
+  Toast,
+  ToastAction,
+  Unit,
+  VisionRead,
+} from "./lib/types";
 import { CalculatorForm } from "./components/CalculatorForm";
 import { TempUnitProvider, useTempUnit } from "./components/TempUnit";
 import { PresetSelector } from "./components/PresetSelector";
@@ -594,6 +603,7 @@ export default function App() {
                 outcomeTags: draft.outcomeTags,
                 hypothesis: draft.hypothesis,
                 actuals: draft.actuals,
+                vision: draft.vision,
                 updatedAt,
               }
             : bake,
@@ -624,6 +634,7 @@ export default function App() {
       outcomeTags: draft.outcomeTags,
       hypothesis: draft.hypothesis,
       actuals: draft.actuals,
+      vision: draft.vision,
       totalDough: math.totalDough,
       parentId: parent?.id,
       rootId: parent ? rootIdOf(parent) : undefined,
@@ -724,6 +735,24 @@ export default function App() {
       overall ? `“${bake.name}” scored ${overall}/5` : "Rating cleared",
       overall ? "success" : "info",
     );
+  };
+
+  /** Applies an opt-in photo read's suggested ratings and outcome tags. */
+  const applyPhotoRead = (bake: BakeEntry, read: VisionRead) => {
+    setBakes((prev) =>
+      prev.map((item) =>
+        item.id === bake.id
+          ? {
+              ...item,
+              vision: read,
+              ratings: { ...item.ratings, ...read.ratings },
+              outcomeTags: normalizeOutcomeTags([...(item.outcomeTags ?? []), ...read.tags]),
+              updatedAt: new Date().toISOString(),
+            }
+          : item,
+      ),
+    );
+    pushToast("Photo read saved — suggested ratings and tags applied", "success");
   };
 
   const markBaked = (bake: BakeEntry, baked: boolean) => {
@@ -1059,6 +1088,7 @@ export default function App() {
         onDesignTrial={(bake) => setDesignBakeId(bake.id)}
         onRate={rateBake}
         onMarkBaked={markBaked}
+        onApplyPhotoRead={applyPhotoRead}
         onKitchen={(bake) => setKitchen({ formula: bake.formula, title: bake.name })}
         onToast={pushToast}
       />

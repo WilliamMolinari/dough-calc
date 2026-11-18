@@ -2,7 +2,15 @@ import { clamp } from "./format";
 import { sanitizeFormula } from "./formula";
 import { repairLineage } from "./journal";
 import { normalizeOutcomeTags } from "./outcomes";
-import type { BakeActuals, BakeEntry, Formula, Ratings, TempUnit, Unit } from "./types";
+import type {
+  BakeActuals,
+  BakeEntry,
+  Formula,
+  Ratings,
+  TempUnit,
+  Unit,
+  VisionRead,
+} from "./types";
 
 /** Browsers give or take ~5 MB per origin; we meter against that expectation. */
 export const STORAGE_BUDGET_BYTES = 5 * 1024 * 1024;
@@ -145,6 +153,40 @@ function normalizeActuals(raw: unknown): BakeActuals | undefined {
   return Object.values(normalized).some((value) => value !== undefined) ? normalized : undefined;
 }
 
+function normalizeVision(raw: unknown): VisionRead | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const entry = raw as Record<string, unknown>;
+  const summary = text(entry.summary).replace(/\s+/g, " ").trim().slice(0, 900);
+  if (!summary) return undefined;
+
+  const source =
+    entry.ratings && typeof entry.ratings === "object"
+      ? (entry.ratings as Record<string, unknown>)
+      : {};
+  const ratings: VisionRead["ratings"] = {};
+  for (const key of ["crust", "crumb", "overall"] as const) {
+    const value = optionalNumber(source[key], 0, 5);
+    if (value !== undefined && value > 0) ratings[key] = Math.round(value);
+  }
+
+  return {
+    summary,
+    observations: Array.isArray(entry.observations)
+      ? entry.observations
+          .filter((item): item is string => typeof item === "string" && !!item.trim())
+          .map((item) => item.replace(/\s+/g, " ").trim().slice(0, 160))
+          .slice(0, 6)
+      : [],
+    tags: normalizeOutcomeTags(entry.tags),
+    ratings,
+    confidence:
+      entry.confidence === "low" || entry.confidence === "high" ? entry.confidence : "medium",
+    photoCount: Math.max(0, Math.min(6, Math.round(number(entry.photoCount)))),
+    model: text(entry.model).slice(0, 80),
+    at: validIso(entry.at) ?? new Date().toISOString(),
+  };
+}
+
 function normalizeRatings(raw: unknown): Ratings {
   const ratings =
     raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
@@ -197,6 +239,7 @@ export function normalizeBakes(stored: unknown): BakeEntry[] {
       hypothesis: text(entry.hypothesis).trim() || undefined,
       outcomeTags: normalizeOutcomeTags(entry.outcomeTags),
       actuals: normalizeActuals(entry.actuals),
+      vision: normalizeVision(entry.vision),
     });
   }
 

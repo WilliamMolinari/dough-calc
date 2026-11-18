@@ -4,12 +4,13 @@ import { OVEN_OPTIONS, TAG_SUGGESTIONS, getStyle } from "../lib/presets";
 import { getOvenProfile } from "../lib/ovens";
 import { fmtWeight } from "../lib/format";
 import { fromTempValue, tempForInput, tempSuffix } from "../lib/temperature";
-import { OUTCOME_TAGS } from "../lib/outcomes";
+import { OUTCOME_TAGS, normalizeOutcomeTags } from "../lib/outcomes";
 import type { DoughMath } from "../lib/calc";
-import type { BakeActuals, Formula, Ratings, Unit } from "../lib/types";
+import type { BakeActuals, Formula, Ratings, Unit, VisionRead } from "../lib/types";
 import { useTempUnit } from "./TempUnit";
 import { ActionButton, Modal, Stars, cx } from "./ui";
 import { MAX_PHOTOS, PhotoUpload } from "./PhotoUpload";
+import { PhotoAnalysis } from "./PhotoAnalysis";
 
 export interface BakeDraft {
   name: string;
@@ -28,6 +29,8 @@ export interface BakeDraft {
   hypothesis: string;
   /** Measured conditions on the day. */
   actuals: BakeActuals;
+  /** Machine read of the photos, when the baker asked for one. */
+  vision?: VisionRead;
 }
 
 const EMPTY_RATINGS: Ratings = { crust: 0, crumb: 0, extensibility: 0, flavor: 0, overall: 0 };
@@ -96,6 +99,7 @@ export function SaveBakeModal({
   const [hypothesis, setHypothesis] = useState("");
   const [actuals, setActuals] = useState<BakeActuals>({});
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [vision, setVision] = useState<VisionRead | undefined>(undefined);
   const previousOpen = useRef(false);
 
   useEffect(() => {
@@ -112,6 +116,7 @@ export function SaveBakeModal({
         setOutcomeTags([...(initial.outcomeTags ?? [])]);
         setHypothesis(initial.hypothesis ?? "");
         setActuals({ ...(initial.actuals ?? {}) });
+        setVision(initial.vision);
       } else {
         setName(suggestedName?.trim() || defaultName(style.name));
         setRatings(EMPTY_RATINGS);
@@ -124,6 +129,7 @@ export function SaveBakeModal({
         setOutcomeTags([]);
         setHypothesis("");
         setActuals({});
+        setVision(undefined);
       }
       setTagDraft("");
       setPhotoBusy(false);
@@ -154,6 +160,7 @@ export function SaveBakeModal({
       outcomeTags,
       hypothesis: hypothesis.trim(),
       actuals,
+      vision,
     });
   };
 
@@ -471,6 +478,22 @@ export function SaveBakeModal({
           onChange={setPhotos}
           onError={(message) => onToast(message, "error")}
           onBusyChange={setPhotoBusy}
+        />
+
+        <PhotoAnalysis
+          photos={photos}
+          read={vision}
+          context={{
+            bakeName: name,
+            styleName: style.name,
+            formulaSummary: `${formula.hydration}% hydration · ${formula.salt}% salt · ${leavenText}`,
+          }}
+          onApply={({ ratings: suggested, tags: suggestedTags, read }) => {
+            setRatings((prev) => ({ ...prev, ...suggested }));
+            setOutcomeTags((prev) => normalizeOutcomeTags([...prev, ...suggestedTags]));
+            setVision(read);
+            onToast("Photo read applied — check the suggested ratings", "success");
+          }}
         />
 
         <p className={cx("font-mono text-[9.5px] leading-relaxed text-cream/25", photoBusy && "text-ember/60")}>

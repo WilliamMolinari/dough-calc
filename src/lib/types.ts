@@ -67,6 +67,24 @@ export interface Ratings {
   overall: number;
 }
 
+export type VisionConfidence = "low" | "medium" | "high";
+
+/** A machine read of a bake's photos. Only fields a photograph can support. */
+export interface VisionRead {
+  /** Plain-language description of what the photos show. */
+  summary: string;
+  /** Short, concrete visual notes. */
+  observations: string[];
+  /** Suggested keys from lib/outcomes.ts. */
+  tags: string[];
+  /** 1–5 suggestions; a missing key means "cannot tell from the photo". */
+  ratings: Partial<Pick<Ratings, "crust" | "crumb" | "overall">>;
+  confidence: VisionConfidence;
+  photoCount: number;
+  model: string;
+  at: string;
+}
+
 export interface BakeActuals {
   /** Measured dough temperature after mixing. */
   doughTempC?: number;
@@ -111,6 +129,8 @@ export interface BakeEntry {
   outcomeTags?: string[];
   /** Measured conditions, as opposed to the formula's planned ones. */
   actuals?: BakeActuals;
+  /** Last opt-in Gemini vision read of this bake's photos. */
+  vision?: VisionRead;
 }
 
 export interface ToastAction {
