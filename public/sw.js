@@ -1,5 +1,5 @@
 /* DoughLab service worker — app shell + runtime caching, no user data sent anywhere. */
-const CACHE = "doughlab-v1";
+const CACHE = "doughlab-v2";
 const SHELL = [
   "/",
   "/index.html",
@@ -33,24 +33,9 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Fonts are the only cross-origin dependency; cache them after first use.
-  if (url.origin !== self.location.origin) {
-    if (url.hostname.endsWith("fonts.googleapis.com") || url.hostname.endsWith("fonts.gstatic.com")) {
-      event.respondWith(
-        caches.open(CACHE).then(async (cache) => {
-          const cached = await cache.match(request);
-          const network = fetch(request)
-            .then((response) => {
-              if (response.ok) void cache.put(request, response.clone());
-              return response;
-            })
-            .catch(() => cached ?? Response.error());
-          return cached || network;
-        }),
-      );
-    }
-    return;
-  }
+  // Every asset is same-origin: fonts ship in the bundle, so a third-party
+  // request would only ever be a mistake. Leave those to the browser.
+  if (url.origin !== self.location.origin) return;
 
   if (url.pathname === "/sw.js") return;
 
