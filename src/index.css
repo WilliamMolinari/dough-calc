@@ -143,10 +143,24 @@
 /* Photo overlays and the kitchen view sit on their own dark imagery, so they keep
  * the dark palette's text colours whatever the page theme is. */
 [data-on-media] {
+  color: #f4efe6;
   --color-cream: #f4efe6;
   --color-white: #ffffff;
   --color-ink: #07070a;
   --color-ink-2: #0b0b11;
+  --color-ember: #ff7a3d;
+  --color-ember-2: #ffb066;
+  --color-hot: #ff4d6d;
+  --color-lime: #c6f45f;
+  --color-sky: #79c9ff;
+  --color-violet: #a78bfa;
+  --line: rgba(255, 255, 255, 0.085);
+  --muted: rgba(244, 239, 230, 0.52);
+  --dl-page: #07070a;
+  --dl-scroll: rgba(255, 255, 255, 0.18);
+  --dl-scroll-hover: rgba(255, 255, 255, 0.3);
+  --dl-track: rgba(255, 255, 255, 0.12);
+  --dl-thumb: #fff7ee;
 }
 
 @layer base {
@@ -428,9 +442,21 @@ input[type="range"].dl-range::-moz-range-thumb {
   }
 }
 
-/* Recipe print sheet */
+/* Recipe print sheet. It always prints on white paper, so it reads the light
+ * palette's ink-on-paper colours instead of whatever theme the app is in. */
 #print-sheet {
   display: none;
+  color: #111111;
+  --color-cream: #000000;
+  --color-white: #3a2a1d;
+  --color-ember: #c2410c;
+  --color-ember-2: #9a3412;
+  --color-hot: #be123c;
+  --color-lime: #4d7c0f;
+  --color-sky: #0369a1;
+  --color-violet: #6d28d9;
+  --line: rgba(0, 0, 0, 0.12);
+  --muted: rgba(0, 0, 0, 0.62);
 }
 
 @media print {

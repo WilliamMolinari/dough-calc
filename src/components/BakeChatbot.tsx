@@ -615,6 +615,7 @@ export function BakeChatbot() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 8 }}
             transition={{ type: "spring", stiffness: 380, damping: 28 }}
+            data-on-media
             className="group fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-4 z-50 flex items-center gap-2 rounded-full border border-ember/25 bg-[#100b0c]/90 p-1.5 pr-1.5 shadow-[0_18px_50px_-16px_rgba(255,92,61,0.55)] backdrop-blur-xl transition-colors hover:border-ember/50 md:bottom-6 md:right-6 md:pr-4"
           >
             <span className="relative grid size-11 place-items-center rounded-full bg-gradient-to-br from-ember-2 via-ember to-hot text-[#1c0b05] shadow-[0_6px_20px_-6px_rgba(255,122,61,0.9)]">
@@ -810,6 +811,7 @@ export function BakeChatbot() {
                           }
                           applyModel(value);
                         }}
+                        data-on-media
                         className="w-full appearance-none rounded-xl border border-white/10 bg-[#0e0e15] py-2 pl-2.5 pr-8 text-[11.5px] text-cream outline-none transition-colors focus:border-ember/60 [&>option]:bg-[#14141c]"
                       >
                         {MODEL_PRESETS.map((preset) => (
