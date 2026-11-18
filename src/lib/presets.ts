@@ -1,0 +1,203 @@
+import type { Formula } from "./types";
+
+export const BASE_FORMULA: Formula = {
+  sizing: "balls",
+  flourWeight: 1000,
+  flour2Pct: 0,
+  flour2Type: "whole-wheat",
+  ballCount: 4,
+  ballWeight: 280,
+  hydration: 63,
+  salt: 2.5,
+  leavenMode: "yeast",
+  starterPct: 20,
+  yeastType: "idy",
+  yeastPct: 0.18,
+  autoLeaven: false,
+  prefermentKind: "poolish",
+  prefermentPct: 30,
+  prefermentHydration: 100,
+  sweetener: "none",
+  sweetenerPct: 1,
+  oil: 1,
+  roomTemp: 22,
+  fridgeTemp: 4,
+  bulkHours: 2,
+  retardHours: 22,
+  temperHours: 2,
+  startTime: "09:00",
+  styleId: "neapolitan",
+  ovenProfile: "home-steel",
+};
+
+export interface StylePreset {
+  id: string;
+  name: string;
+  short: string;
+  blurb: string;
+  accent: string;
+  formula: Formula;
+}
+
+const make = (overrides: Partial<Formula>): Formula => ({ ...BASE_FORMULA, ...overrides });
+
+export const STYLES: StylePreset[] = [
+  {
+    id: "neapolitan",
+    name: "Neapolitan",
+    short: "Soft, blistered, 48 h",
+    blurb: "Slow cold ferment, minimal yeast, a puffy leopard-spotted cornicione.",
+    accent: "#ff7a3d",
+    formula: make({
+      styleId: "neapolitan",
+      hydration: 63,
+      salt: 2.8,
+      oil: 0,
+      sweetener: "none",
+      yeastPct: 0.12,
+      ballWeight: 250,
+      bulkHours: 2,
+      retardHours: 22,
+      temperHours: 2,
+      roomTemp: 22,
+    }),
+  },
+  {
+    id: "new-york",
+    name: "New York",
+    short: "Chewy, foldable slice",
+    blurb: "A touch of oil and sugar for a malty, foldable slice that browns evenly.",
+    accent: "#ffb066",
+    formula: make({
+      styleId: "new-york",
+      hydration: 63,
+      salt: 2.5,
+      oil: 1.5,
+      sweetener: "sugar",
+      sweetenerPct: 1,
+      yeastPct: 0.22,
+      ballWeight: 320,
+      bulkHours: 2,
+      retardHours: 24,
+      temperHours: 1,
+      roomTemp: 22,
+    }),
+  },
+  {
+    id: "detroit",
+    name: "Detroit",
+    short: "Airy, crispy-edged square",
+    blurb: "High hydration, plenty of oil, pressed into a blue-steel pan and baked hard.",
+    accent: "#ff4d6d",
+    formula: make({
+      styleId: "detroit",
+      hydration: 72,
+      salt: 2.4,
+      oil: 4,
+      sweetener: "malt",
+      sweetenerPct: 1.5,
+      yeastPct: 0.35,
+      ballCount: 2,
+      ballWeight: 450,
+      bulkHours: 3,
+      retardHours: 18,
+      temperHours: 2,
+      roomTemp: 23,
+    }),
+  },
+  {
+    id: "roman-pan",
+    name: "Roman Pan",
+    short: "Focaccia-like, olive oil",
+    blurb: "Wet, olive-oil-rich dough baked in a sheet pan for a custardy interior.",
+    accent: "#e3b04b",
+    formula: make({
+      styleId: "roman-pan",
+      hydration: 76,
+      salt: 2.6,
+      oil: 3,
+      sweetener: "sugar",
+      sweetenerPct: 0.5,
+      yeastPct: 0.28,
+      ballCount: 2,
+      ballWeight: 600,
+      bulkHours: 2.5,
+      retardHours: 24,
+      temperHours: 2,
+      roomTemp: 22,
+    }),
+  },
+  {
+    id: "sourdough",
+    name: "High-Hydration Sourdough",
+    short: "80% · wild yeast",
+    blurb: "No commercial yeast. A long, cool ferment builds a lacier, tangier crumb.",
+    accent: "#c6f45f",
+    formula: make({
+      styleId: "sourdough",
+      hydration: 80,
+      salt: 2.6,
+      leavenMode: "sourdough",
+      starterPct: 20,
+      oil: 0,
+      sweetener: "none",
+      ballWeight: 280,
+      bulkHours: 4.5,
+      retardHours: 20,
+      temperHours: 1.5,
+      roomTemp: 24,
+    }),
+  },
+  {
+    id: "poolish",
+    name: "Poolish",
+    short: "Pre-ferment, bakery crumb",
+    blurb: "A 100% hydration overnight poolish brings depth and a delicate open crumb.",
+    accent: "#a78bfa",
+    formula: make({
+      styleId: "poolish",
+      hydration: 66,
+      salt: 2.5,
+      oil: 1,
+      sweetener: "none",
+      leavenMode: "preferment",
+      prefermentKind: "poolish",
+      prefermentPct: 30,
+      prefermentHydration: 100,
+      yeastPct: 0.2,
+      ballWeight: 280,
+      bulkHours: 1.5,
+      retardHours: 20,
+      temperHours: 1.5,
+      roomTemp: 23,
+    }),
+  },
+];
+
+export const DEFAULT_FORMULA: Formula = STYLES[0].formula;
+
+export function getStyle(id: string): StylePreset {
+  return STYLES.find((s) => s.id === id) ?? STYLES[0];
+}
+
+export const OVEN_OPTIONS = [
+  "Home oven + steel",
+  "Ooni / gas",
+  "Wood-fired",
+  "Electric deck",
+  "Pan / Detroit",
+  "Other",
+];
+
+export const TAG_SUGGESTIONS = [
+  "00 flour",
+  "bread flour",
+  "poolish",
+  "cold ferment",
+  "same-day",
+  "whole wheat",
+  "semolina",
+  "too wet",
+  "underproofed",
+  "great char",
+];

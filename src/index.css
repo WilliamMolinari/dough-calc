@@ -1,0 +1,349 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+
+  --color-ink: #07070a;
+  --color-ink-2: #0b0b11;
+  --color-cream: #f4efe6;
+  --color-ember: #ff7a3d;
+  --color-ember-2: #ffb066;
+  --color-hot: #ff4d6d;
+  --color-lime: #c6f45f;
+  --color-sky: #79c9ff;
+  --color-violet: #a78bfa;
+}
+
+:root {
+  color-scheme: dark;
+  --line: rgba(255, 255, 255, 0.085);
+  --muted: rgba(244, 239, 230, 0.52);
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: #07070a;
+    color: #f4efe6;
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01" 1, "cv01" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: rgba(255, 122, 61, 0.32);
+    color: #fff;
+  }
+
+  :where(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid rgba(255, 122, 61, 0.75);
+    outline-offset: 2px;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.45);
+    cursor: pointer;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    border: 3px solid #07070a;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+}
+
+/* Ambient background */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 600px at 82% -8%, rgba(255, 122, 61, 0.16), transparent 62%),
+    radial-gradient(760px 640px at 4% 4%, rgba(255, 77, 109, 0.08), transparent 60%),
+    radial-gradient(1100px 700px at 50% 110%, rgba(167, 139, 250, 0.09), transparent 65%),
+    #07070a;
+}
+
+.app-bg::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  pointer-events: none;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent 75%);
+}
+
+/* Surfaces */
+.glass {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.062), rgba(255, 255, 255, 0.018) 46%, rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.06) inset,
+    0 24px 60px -30px rgba(0, 0, 0, 0.9);
+}
+
+.glass-soft {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-inset {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+/* Chat drawer needs a near-opaque base so long answers stay readable. */
+.chat-panel {
+  background:
+    radial-gradient(120% 55% at 100% 0%, rgba(255, 122, 61, 0.1), transparent 62%),
+    linear-gradient(180deg, #100d11 0%, #0b0b11 42%, #08080d 100%);
+  backdrop-filter: blur(28px) saturate(130%);
+  -webkit-backdrop-filter: blur(28px) saturate(130%);
+}
+
+.hairline {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+
+.text-gradient {
+  background: linear-gradient(96deg, #ffd9b8 0%, #ff9a5c 38%, #ff5d7a 78%, #c6f45f 130%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-ember {
+  background: linear-gradient(140deg, #ffa066 0%, #ff7a3d 42%, #ff4d6d 100%);
+  color: #1a0a05;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 14px 36px -14px rgba(255, 92, 61, 0.75);
+}
+
+.btn-ember:hover {
+  filter: brightness(1.06);
+}
+
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.13) 45%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.sheen:hover::after {
+  transform: translateX(120%);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Range sliders */
+input[type="range"].dl-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"].dl-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--track, rgba(255, 255, 255, 0.12));
+}
+
+input[type="range"].dl-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+input[type="range"].dl-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffb066, #ff7a3d);
+}
+
+input[type="range"].dl-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: #fff7ee;
+  border: 3px solid #ff7a3d;
+  box-shadow:
+    0 0 0 4px rgba(255, 122, 61, 0.14),
+    0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+input[type="range"].dl-range:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+  box-shadow:
+    0 0 0 7px rgba(255, 122, 61, 0.18),
+    0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
+input[type="range"].dl-range::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 999px;
+  background: #fff7ee;
+  border: 3px solid #ff7a3d;
+  box-shadow: 0 0 0 4px rgba(255, 122, 61, 0.14);
+}
+
+/* Animations */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -3%, 0) scale(1.04);
+  }
+}
+
+.drift {
+  animation: drift 18s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+  background-size: 200% 100%;
+  animation: shimmer 2.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Recipe print sheet */
+#print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #print-sheet,
+  #print-sheet * {
+    visibility: visible !important;
+  }
+
+  #print-sheet {
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

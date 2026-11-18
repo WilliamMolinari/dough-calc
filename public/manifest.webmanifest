@@ -1,0 +1,39 @@
+{
+  "id": "/",
+  "name": "DoughLab — Pizza Dough Calculator & Bake Journal",
+  "short_name": "DoughLab",
+  "description": "Precision pizza dough formulas, a bake journal, fermentation timing and an offline kitchen mode.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#07070a",
+  "theme_color": "#07070a",
+  "categories": ["food", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
