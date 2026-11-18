@@ -30,6 +30,17 @@ only have to say roughly what you want and press the buttons in order.
 
 That's it. Everything below is optional detail.
 
+### What it looks like
+
+Real screenshots of the app at desktop (1280 px) and phone (390 px) widths. The bakes in the journal
+are example entries, not someone's real dinner.
+
+| **The calculator** | **The journal** | **Photo read** |
+| --- | --- | --- |
+| <a href="docs/screenshots/calculator-desktop.png"><img src="docs/screenshots/calculator-desktop.png" width="300" alt="DoughLab calculator on a desktop browser, with style presets, batch sizing and the live weigh-and-bake panel"></a> | <a href="docs/screenshots/journal-desktop.png"><img src="docs/screenshots/journal-desktop.png" width="300" alt="DoughLab journal on a desktop browser, showing saved bake cards with photos, ratings and filters"></a> | <a href="docs/screenshots/photo-read-desktop.png"><img src="docs/screenshots/photo-read-desktop.png" width="240" alt="A saved bake open on desktop, with a photo read listing what the model saw, suggested tags and scores"></a> |
+| <a href="docs/screenshots/calculator-phone.png"><img src="docs/screenshots/calculator-phone.png" width="150" alt="DoughLab calculator on a phone, with the same style presets and batch controls stacked"></a> | <a href="docs/screenshots/journal-phone.png"><img src="docs/screenshots/journal-phone.png" width="150" alt="DoughLab journal on a phone, showing the stats row, insights and bake list"></a> | <a href="docs/screenshots/photo-read-phone.png"><img src="docs/screenshots/photo-read-phone.png" width="150" alt="The photo read card on a phone: saved read, observations, tags and Apply to log"></a> |
+| Pick a style, say how much dough you want, and the panel on the right shows exactly what to weigh plus the start-to-oven schedule. On a phone the same controls stack in the same order. | Every saved bake becomes a card with its photo, stars, style and date. Filter by style or “awaiting rating”, open one to compare or carry forward, and use **Insights** to look for patterns across bakes. | Once you tap Analyze, the app lists what it can see in the photo and suggests tags and scores. **Apply to log** copies them onto the bake — until then, nothing changes. |
+
 ### What the main screens are for
 
 | Screen | What you do there |
