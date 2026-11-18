@@ -156,7 +156,7 @@ export const STYLES: StylePreset[] = [
       yeastPct: 0.16,
       sizing: "pan",
       ballCount: 1,
-      ballWeight: 600,
+      ballWeight: 780,
       // A 40 × 30 cm sheet pan at 0.65 g/cm² is a focaccia-deep 780 g.
       panLength: 40,
       panWidth: 30,
