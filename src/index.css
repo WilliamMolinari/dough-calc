@@ -83,7 +83,7 @@
 
 [data-theme="light"] {
   color-scheme: light;
-  --color-cream: #2c2118;
+  --color-cream: #000000;
   --color-white: #3a2a1d;
   --color-ink: #fffdf9;
   --color-ink-2: #f4e9da;
@@ -98,7 +98,7 @@
   --muted: rgba(44, 33, 24, 0.62);
 
   --dl-page: #f7f1e6;
-  --dl-body-text: #2c2118;
+  --dl-body-text: #000000;
   --dl-app-bg:
     radial-gradient(900px 600px at 82% -8%, rgba(255, 122, 61, 0.18), transparent 62%),
     radial-gradient(760px 640px at 4% 4%, rgba(255, 77, 109, 0.1), transparent 60%),

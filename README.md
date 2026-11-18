@@ -1,5 +1,8 @@
 # DoughLab
 
+**[Open DoughLab in your browser →](https://dough-calc-oalmuq.freebuff.page)** — nothing to install,
+no account, and every formula and bake stays on your own device.
+
 A local-first pizza dough calculator, bake journal and kitchen timer. Dial in hydration, leavening,
 fermentation and oven, log what actually happened, and compare trials. It runs as a static website
 (PWA) and as a desktop app for macOS and Windows.
