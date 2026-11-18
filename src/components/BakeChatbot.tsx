@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  ImagePlus,
   KeyRound,
   RotateCcw,
   ShieldCheck,
@@ -41,6 +42,9 @@ import {
   type GeminiKeySource,
 } from "../lib/gemini";
 import { useDialogLayer } from "../hooks/useDialogLayer";
+import { photoSrc } from "../lib/photoFiles";
+import { loadBakes } from "../lib/storage";
+import { prepareChatPhoto } from "../lib/vision";
 import { cx } from "./ui";
 
 const STARTER_PROMPTS = [
@@ -60,10 +64,19 @@ const MODEL_PRESETS = [
 
 const isPresetModel = (id: string) => MODEL_PRESETS.some((preset) => preset.id === id);
 
+interface ChatAttachment {
+  /** Small data URL used for the thumbnail. */
+  preview: string;
+  data: string;
+  mimeType: string;
+}
+
 interface ChatMessage {
   id: string;
   role: "user" | "model";
   text: string;
+  /** Only user turns carry a photo. */
+  photo?: ChatAttachment;
 }
 
 interface ChatError {
@@ -250,10 +263,18 @@ export function BakeChatbot() {
   const [models, setModels] = useState<string[] | null>(null);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
+  const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [attachBusy, setAttachBusy] = useState(false);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [journalPhotos, setJournalPhotos] = useState<
+    Array<{ id: string; bake: string; photo: string }>
+  >([]);
 
   const fabRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const keyInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
@@ -340,7 +361,11 @@ export function BakeChatbot() {
     setLoading(true);
     setError(null);
 
-    const turns: ChatTurn[] = history.map(({ role, text }) => ({ role, text }));
+    const turns: ChatTurn[] = history.map(({ role, text, photo }) => ({
+      role,
+      text,
+      ...(photo ? { photo: { data: photo.data, mimeType: photo.mimeType } } : {}),
+    }));
 
     try {
       const reply = await askBakeSommelier(turns, controller.signal);
@@ -369,7 +394,8 @@ export function BakeChatbot() {
     async (promptText?: string) => {
       if (loading) return;
       const text = (promptText ?? input).trim();
-      if (!text) return;
+      const photo = attachment;
+      if (!text && !photo) return;
 
       if (getKeySource() === "none") {
         setKeySource("none");
@@ -384,15 +410,21 @@ export function BakeChatbot() {
       const userMessage: ChatMessage = {
         id: nextMessageId(),
         role: "user",
-        text: text.slice(0, 2000),
+        text: (
+          text || "What do you see in this photo, and what should I change next?"
+        ).slice(0, 2000),
+        photo: photo ?? undefined,
       };
       const history = [...messages, userMessage];
       setMessages(history);
       setInput("");
+      setAttachment(null);
+      setAttachOpen(false);
+      setAttachError(null);
       setError(null);
       await requestReply(history);
     },
-    [input, loading, messages, requestReply],
+    [attachment, input, loading, messages, requestReply],
   );
 
   const stop = () => {
@@ -411,6 +443,9 @@ export function BakeChatbot() {
     setMessages([]);
     setError(null);
     setInput("");
+    setAttachment(null);
+    setAttachOpen(false);
+    setAttachError(null);
     setKeyError(null);
     window.setTimeout(() => inputRef.current?.focus(), 60);
   };
@@ -489,6 +524,71 @@ export function BakeChatbot() {
       );
     } finally {
       setModelsLoading(false);
+    }
+  };
+
+  const attachPhoto = async (source: string) => {
+    setAttachBusy(true);
+    setAttachError(null);
+    try {
+      const prepared = await prepareChatPhoto(source);
+      setAttachment({
+        ...prepared,
+        preview: `data:${prepared.mimeType};base64,${prepared.data}`,
+      });
+      setAttachOpen(false);
+    } catch (caught) {
+      setAttachError(caught instanceof Error ? caught.message : "That photo could not be read.");
+    } finally {
+      setAttachBusy(false);
+    }
+  };
+
+  const toggleAttach = () => {
+    setAttachOpen((value) => {
+      const next = !value;
+      if (next) {
+        setAttachError(null);
+        try {
+          setJournalPhotos(
+            loadBakes()
+              .flatMap((bake) =>
+                bake.photos.map((photo, index) => ({
+                  id: `${bake.id}-${index}`,
+                  bake: bake.name,
+                  photo,
+                })),
+              )
+              .slice(0, 18),
+          );
+        } catch {
+          setJournalPhotos([]);
+        }
+      }
+      return next;
+    });
+  };
+
+  const attachFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setAttachError("Choose an image file.");
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setAttachError("That photo is over 12 MB — pick a smaller one.");
+      return;
+    }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Could not read that file."));
+        reader.readAsDataURL(file);
+      });
+      await attachPhoto(dataUrl);
+    } catch (caught) {
+      setAttachError(caught instanceof Error ? caught.message : "Could not read that file.");
     }
   };
 
@@ -901,7 +1001,14 @@ export function BakeChatbot() {
                     {messages.map((message) =>
                       message.role === "user" ? (
                         <div key={message.id} className="flex justify-end">
-                          <div className="max-w-[86%] rounded-2xl rounded-br-md border border-ember/20 bg-ember/[0.12] px-3 py-2 text-[12px] leading-relaxed text-cream/90">
+                          <div className="max-w-[86%] overflow-hidden rounded-2xl rounded-br-md border border-ember/20 bg-ember/[0.12] px-3 py-2 text-[12px] leading-relaxed text-cream/90">
+                            {message.photo && (
+                              <img
+                                src={message.photo.preview}
+                                alt="Bake photo attached to this message"
+                                className="mb-2 max-h-44 w-full rounded-xl object-cover"
+                              />
+                            )}
                             {message.text}
                           </div>
                         </div>
@@ -923,6 +1030,93 @@ export function BakeChatbot() {
             {/* Footer */}
             {!showKey && (
               <div className="shrink-0 border-t border-white/8 bg-black/20">
+                {attachOpen && (
+                  <div className="mx-3 mt-2 rounded-xl border border-white/10 bg-black/30 p-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-[8.5px] uppercase tracking-[0.12em] text-cream/35">
+                        Attach a bake photo
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setAttachOpen(false)}
+                        aria-label="Close photo picker"
+                        className="text-cream/35 transition-colors hover:text-cream"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                    {journalPhotos.length > 0 ? (
+                      <div className="no-scrollbar mt-1.5 flex gap-1.5 overflow-x-auto">
+                        {journalPhotos.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => void attachPhoto(item.photo)}
+                            aria-label={`Attach photo from ${item.bake}`}
+                            title={item.bake}
+                            className="h-14 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 transition-colors hover:border-ember/50"
+                          >
+                            <img src={photoSrc(item.photo)} alt="" className="h-full w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-1.5 text-[10px] leading-relaxed text-cream/35">
+                        No saved bake photos yet — upload one below.
+                      </p>
+                    )}
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => photoInputRef.current?.click()}
+                        disabled={attachBusy}
+                        className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] text-cream/65 transition-colors hover:border-ember/30 hover:text-ember-2 disabled:opacity-40"
+                      >
+                        {attachBusy ? "Preparing…" : "Upload a photo"}
+                      </button>
+                      <span className="font-mono text-[8px] uppercase tracking-[0.08em] text-cream/20">
+                        sent only when you press send
+                      </span>
+                    </div>
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        void attachFile(event.target.files?.[0]);
+                        event.target.value = "";
+                      }}
+                    />
+                    {attachError && (
+                      <p role="alert" className="mt-1.5 text-[10px] leading-relaxed text-hot/90">
+                        {attachError}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {attachment && (
+                  <div className="mx-3 mt-2 flex items-center gap-2 rounded-xl border border-sky/20 bg-sky/[0.06] p-1.5">
+                    <img
+                      src={attachment.preview}
+                      alt="Attached bake"
+                      className="size-10 shrink-0 rounded-lg object-cover"
+                    />
+                    <p className="min-w-0 flex-1 text-[10px] leading-relaxed text-cream/55">
+                      Photo attached — the sommelier sees the shot with this message.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setAttachment(null)}
+                      aria-label="Remove attached photo"
+                      className="grid size-6 shrink-0 place-items-center rounded-lg text-cream/40 transition-colors hover:text-hot"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+
                 {error && (
                   <div
                     role="alert"
@@ -987,6 +1181,22 @@ export function BakeChatbot() {
 
                 <div className="px-3 pb-2.5 pt-2">
                   <div className="flex items-end gap-1.5 rounded-2xl border border-white/10 bg-black/30 p-1.5 transition-colors focus-within:border-ember/40">
+                    <button
+                      type="button"
+                      onClick={toggleAttach}
+                      disabled={loading}
+                      aria-label="Attach a bake photo"
+                      aria-pressed={attachOpen || !!attachment}
+                      title="Attach a bake photo"
+                      className={cx(
+                        "grid size-8 shrink-0 place-items-center rounded-xl border transition-colors disabled:opacity-40",
+                        attachment
+                          ? "border-sky/40 bg-sky/15 text-sky-2"
+                          : "border-white/10 bg-white/[0.04] text-cream/45 hover:text-cream",
+                      )}
+                    >
+                      <ImagePlus size={14} />
+                    </button>
                     <textarea
                       ref={inputRef}
                       value={input}
@@ -1018,7 +1228,7 @@ export function BakeChatbot() {
                       <button
                         type="button"
                         onClick={() => void send()}
-                        disabled={!input.trim()}
+                        disabled={!input.trim() && !attachment}
                         aria-label="Send message"
                         className="btn-ember grid size-8 shrink-0 place-items-center rounded-xl disabled:cursor-not-allowed disabled:opacity-40"
                       >

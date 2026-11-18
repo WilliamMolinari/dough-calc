@@ -144,6 +144,32 @@ export function parseVisionResult(
 }
 
 /**
+ * Resolves one photo (inline or a desktop file reference) and shrinks it so it
+ * can be attached to a chat turn.
+ */
+export async function prepareChatPhoto(
+  photo: string,
+): Promise<{ data: string; mimeType: string }> {
+  const source = await resolvePhoto(photo);
+  if (!source) {
+    throw new BakeSommelierError(
+      "empty",
+      "That photo could not be opened. In the desktop app, check that its folder is still connected.",
+    );
+  }
+  let scaled: PreparedPhoto | null = null;
+  try {
+    scaled = await downscalePhoto(source);
+  } catch {
+    scaled = null;
+  }
+  if (!scaled) {
+    throw new BakeSommelierError("empty", "That photo could not be read. Try a JPEG or PNG.");
+  }
+  return scaled;
+}
+
+/**
  * Reads up to three photos with Gemini vision. Nothing leaves the device until
  * a baker taps the button that calls this.
  */

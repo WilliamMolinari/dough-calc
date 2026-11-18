@@ -255,7 +255,7 @@ function describeBake(bake: BakeEntry, index: number, bakes: BakeEntry[]): strin
     }, extensibility ${ratings.extensibility}, flavour ${ratings.flavor}.`,
     `Context: flour ${bake.flourBrand ? clampText(bake.flourBrand, 60) : "unspecified"}; oven ${
       bake.oven ? clampText(bake.oven, 60) : "unspecified"
-    }; tags ${bake.tags.length ? bake.tags.map((tag) => `#${clampText(tag, 24)}`).join(", ") : "none"}. Photos are stored locally and are not attached to this chat.`,
+    }; tags ${bake.tags.length ? bake.tags.map((tag) => `#${clampText(tag, 24)}`).join(", ") : "none"}. Photos are stored locally and are only sent when the baker attaches one to a message.`,
   ];
 
   if (bake.vision) {
@@ -450,7 +450,7 @@ function buildSystemInstruction(journal: JournalContext): string {
     "- Explain the mechanism (gluten development, enzyme activity, yeast/starter population, oven heat transfer) and tie it to concrete numbers.",
     "- Suggest 1–3 specific, measurable changes for the next bake, with expected trade-offs. Use baker's percentages and grams.",
     "- If the journal is empty or the relevant data is missing, say so plainly and answer from general pizza science. Never invent bakes, ratings or notes.",
-    "- Photo pixels are never attached to this chat. A saved 'photo read' is a machine's visual impression of the photos, not a measurement: use it, attribute it honestly, and never invent visual details beyond it.",
+    "- When the baker attaches a photo, you can see it. Judge only what is visible (crumb, char, rim, underside, evenness) and never infer flavour, salt level or fermentation time from a picture. The saved journal text never includes pixels; a saved 'photo read' is a machine's visual impression, not a measurement.",
     "- Treat 0 ratings as 'unrated', not as a bad result.",
     "- Duplicated bakes form trial families: a forked trial starts with no score. Use the 'change vs parent' line to explain what the baker actually changed, and compare a trial with its parent rather than with unrelated bakes.",
     "- Be warm, direct and concise: ideally under 250 words, using short paragraphs or bullets and a clear 'Try next' list.",
@@ -467,6 +467,27 @@ function buildSystemInstruction(journal: JournalContext): string {
 export interface ChatTurn {
   role: "user" | "model";
   text: string;
+  /** Prepared (downscaled) image the baker attached to this turn. */
+  photo?: { data: string; mimeType: string };
+}
+
+/**
+ * Builds the request contents. An attached photo stays with its turn, so
+ * follow-up questions in the same conversation can still refer to the shot.
+ */
+export function chatContents(turns: ChatTurn[]): Array<{
+  role: "user" | "model";
+  parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
+}> {
+  return turns.map((turn) => ({
+    role: turn.role === "model" ? "model" : "user",
+    parts: [
+      ...(turn.photo
+        ? [{ inlineData: { mimeType: turn.photo.mimeType, data: turn.photo.data } }]
+        : []),
+      { text: turn.text.slice(0, 4000) },
+    ],
+  }));
 }
 
 let cachedClient: { key: string; client: GoogleGenAI } | null = null;
@@ -600,7 +621,7 @@ export async function askBakeSommelier(
   }
 
   const cleanTurns = turns
-    .filter((turn) => turn.text.trim().length > 0)
+    .filter((turn) => turn.text.trim().length > 0 || turn.photo)
     .slice(-MAX_HISTORY_TURNS);
 
   if (cleanTurns.length === 0) {
@@ -609,10 +630,7 @@ export async function askBakeSommelier(
 
   const model = getActiveModel();
   const journal = buildJournalContext();
-  const contents = cleanTurns.map((turn) => ({
-    role: turn.role === "model" ? "model" : "user",
-    parts: [{ text: turn.text.slice(0, 4000) }],
-  }));
+  const contents = chatContents(cleanTurns);
 
   try {
     const client = await clientFor(apiKey);
