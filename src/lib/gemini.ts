@@ -1,5 +1,6 @@
 import type { GoogleGenAI } from "@google/genai";
 import { calculateDough } from "./calc";
+import { getFlourType, secondFlourShare } from "./flours";
 import { lineageOf } from "./journal";
 import { OUTCOME_LABELS } from "./outcomes";
 import { loadBakes } from "./storage";
@@ -229,6 +230,11 @@ function describeBake(bake: BakeEntry, index: number, bakes: BakeEntry[]): strin
       f.salt,
       1,
     )}% salt; ${n(f.oil, 1)}% oil; ${SWEETENER_LABEL[f.sweetener]} ${n(f.sweetenerPct, 1)}%; ${leavenLine(bake)}.`,
+    secondFlourShare(f) > 0
+      ? `Flour blend: ${n(100 - secondFlourShare(f))}% base flour + ${n(
+          secondFlourShare(f),
+        )}% ${getFlourType(f.flour2Type).label}.`
+      : "Single flour.",
     `Fermentation: bulk ${n(f.bulkHours, 1)} h @ ${n(f.roomTemp, 1)} °C; cold retard ${n(
       f.retardHours,
       1,

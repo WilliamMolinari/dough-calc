@@ -16,6 +16,9 @@ import { normalizePlan, type PlanSettings } from "../lib/plan";
 import { getStyle } from "../lib/presets";
 import { readStored, STORAGE_KEYS, writeStored } from "../lib/storage";
 import type { Formula, Unit } from "../lib/types";
+import { flourBlendLabel } from "../lib/flours";
+import { convertTempText, fmtTemp } from "../lib/temperature";
+import { useTempUnit } from "./TempUnit";
 import { Badge, Card, NumberField, SectionHeading, cx } from "./ui";
 import { OvenProfilePicker } from "./OvenProfilePicker";
 
@@ -51,6 +54,7 @@ export function DinnerPlanner({
   }, [plan]);
 
   const oven = getOvenProfile(formula.ovenProfile);
+  const tempUnit = useTempUnit();
   const style = getStyle(formula.styleId);
   const pies = clamp(Math.round(plan.guests * plan.piesPerGuest), 1, 80);
   const ballWeight = clamp(plan.ballWeight, 80, 900);
@@ -64,6 +68,7 @@ export function DinnerPlanner({
     ballWeight,
   };
   const math = calculateDough(scaled);
+  const blend = flourBlendLabel(scaled);
   const totalDough = math.totalDough;
 
   const serve = useMemo(() => {
@@ -87,14 +92,16 @@ export function DinnerPlanner({
       key: "mix",
       label: "Mix & rest",
       at: mixStart,
-      detail: `${fmtWeight(math.flour, unit)} flour · ${fmtWeight(math.water, unit)} water · ${fmtWeight(math.salt, unit)} salt. Rest 20 min before bulk.`,
+      detail: `${fmtWeight(math.flour, unit)} flour${
+        blend ? ` (${blend})` : ""
+      } · ${fmtWeight(math.water, unit)} water · ${fmtWeight(math.salt, unit)} salt. Rest 20 min before bulk.`,
       tone: "mix",
     },
     {
       key: "bulk",
       label: "Bulk ferment",
       at: addMinutes(mixStart, 20),
-      detail: `${formula.bulkHours} h at ${formula.roomTemp}°C, then divide and ball.`,
+      detail: `${formula.bulkHours} h at ${fmtTemp(formula.roomTemp, tempUnit)}, then divide and ball.`,
       tone: "ferment",
     },
   ];
@@ -104,7 +111,7 @@ export function DinnerPlanner({
       key: "retard",
       label: "Cold retard",
       at: addMinutes(mixStart, 20 + formula.bulkHours * 60),
-      detail: `${formula.retardHours} h at ${formula.fridgeTemp}°C in a sealed tray.`,
+      detail: `${formula.retardHours} h at ${fmtTemp(formula.fridgeTemp, tempUnit)} in a sealed tray.`,
       tone: "ferment",
     });
   }
@@ -123,7 +130,7 @@ export function DinnerPlanner({
     key: "preheat",
     label: "Fire the oven",
     at: preheatStart,
-    detail: `${oven.name} to ${oven.tempC}°C for ${oven.preheatMin} min. ${oven.note}`,
+    detail: `${oven.name} to ${fmtTemp(oven.tempC, tempUnit)} for ${oven.preheatMin} min. ${convertTempText(oven.note, tempUnit)}`,
     tone: "oven",
   });
 

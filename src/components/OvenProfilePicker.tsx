@@ -1,5 +1,7 @@
 import { Flame, Thermometer, Timer } from "lucide-react";
 import { OVEN_PROFILES, getOvenProfile } from "../lib/ovens";
+import { convertTempText, fmtTemp } from "../lib/temperature";
+import { useTempUnit } from "./TempUnit";
 import { cx } from "./ui";
 
 export function OvenProfilePicker({
@@ -12,6 +14,7 @@ export function OvenProfilePicker({
   compact?: boolean;
 }) {
   const oven = getOvenProfile(value);
+  const tempUnit = useTempUnit();
 
   return (
     <div>
@@ -33,7 +36,7 @@ export function OvenProfilePicker({
             >
               <span className="block whitespace-nowrap text-[11.5px] font-medium">{profile.name}</span>
               <span className="mt-0.5 block whitespace-nowrap font-mono text-[8.5px] uppercase tracking-[0.08em] text-cream/30">
-                {profile.short}
+                {convertTempText(profile.short, tempUnit)}
               </span>
             </button>
           );
@@ -42,7 +45,7 @@ export function OvenProfilePicker({
 
       <div className={cx("mt-2 grid grid-cols-3 gap-2", compact && "mt-1.5")}>
         {[
-          { label: "Deck", value: `${oven.tempC}°C`, icon: Thermometer },
+          { label: "Deck", value: fmtTemp(oven.tempC, tempUnit), icon: Thermometer },
           { label: "Preheat", value: `${oven.preheatMin} min`, icon: Timer },
           {
             label: "Bake",
@@ -60,7 +63,9 @@ export function OvenProfilePicker({
       </div>
 
       {!compact && (
-        <p className="mt-2 text-[10.5px] leading-relaxed text-cream/35">{oven.note}</p>
+        <p className="mt-2 text-[10.5px] leading-relaxed text-cream/35">
+          {convertTempText(oven.note, tempUnit)}
+        </p>
       )}
     </div>
   );

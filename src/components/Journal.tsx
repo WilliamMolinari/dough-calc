@@ -14,13 +14,16 @@ import {
   Wheat,
 } from "lucide-react";
 import { formatBytes } from "../lib/backup";
+import { isDesktopApp } from "../lib/desktop";
 import { fmtDate, fmtWeight, round } from "../lib/format";
+import { countInlinePhotos, photoSrc } from "../lib/photoFiles";
 import { doughMadeGrams, isPlannedTrial } from "../lib/journal";
 import { STORAGE_BUDGET_BYTES, storagePressure } from "../lib/storage";
 import { STYLES } from "../lib/presets";
 import type { BakeEntry, Unit } from "../lib/types";
 import { ActionButton, Badge, Card, Stars, cx } from "./ui";
 import { JournalInsights } from "./JournalInsights";
+import { PhotoFolderCard } from "./PhotoFolderCard";
 
 type SortMode = "newest" | "rating";
 
@@ -40,6 +43,7 @@ export function Journal({
   onBackup,
   onRate,
   onMarkBaked,
+  onMovePhotos,
 }: {
   bakes: BakeEntry[];
   unit: Unit;
@@ -52,6 +56,8 @@ export function Journal({
   onBackup: () => void;
   onRate: (bake: BakeEntry, overall: number) => void;
   onMarkBaked: (bake: BakeEntry, baked: boolean) => void;
+  /** Desktop only: move journal-embedded photos into the chosen folder. */
+  onMovePhotos: () => Promise<number>;
 }) {
   const [query, setQuery] = useState("");
   const [style, setStyle] = useState("all");
@@ -329,7 +335,7 @@ export function Journal({
                   <div className="relative aspect-[16/10] overflow-hidden bg-black/40">
                     {bake.photos?.length ? (
                       <img
-                        src={bake.photos[0]}
+                        src={photoSrc(bake.photos[0])}
                         alt={`${bake.name} finished bake`}
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                         loading="lazy"
@@ -479,13 +485,21 @@ export function Journal({
           ) : (
             photoCount > 0 && (
               <p className="mt-1.5 font-mono text-[9px] text-cream/20">
-                {photoCount} photo{photoCount === 1 ? "" : "s"} · photos live in the browser database,
-                resized for this device
+                {photoCount} photo{photoCount === 1 ? "" : "s"} ·{" "}
+                {isDesktopApp()
+                  ? "saved as image files in your photo folder"
+                  : "photos live in the browser database, resized for this device"}
               </p>
             )
           )}
         </div>
       )}
+
+      <PhotoFolderCard
+        totalPhotos={photoCount}
+        inlinePhotos={countInlinePhotos(bakes.flatMap((bake) => bake.photos ?? []))}
+        onMovePhotos={onMovePhotos}
+      />
     </div>
   );
 }

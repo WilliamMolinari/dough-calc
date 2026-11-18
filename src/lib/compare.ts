@@ -1,6 +1,7 @@
 import { calculateDough } from "./calc";
 import { fmtNumber, fmtWeight } from "./format";
-import type { BakeEntry, Unit } from "./types";
+import { tempSuffix, toTempValue } from "./temperature";
+import type { BakeEntry, TempUnit, Unit } from "./types";
 
 export type ComparisonSection = "Recipe" | "Fermentation" | "Scores";
 
@@ -32,7 +33,11 @@ export interface BakeComparison {
  * Build the numeric diff between two saved bakes. Values stay in their base
  * units (grams for weights) so the UI can render the same rows in g or oz.
  */
-export function buildBakeComparison(a: BakeEntry, b: BakeEntry): BakeComparison {
+export function buildBakeComparison(
+  a: BakeEntry,
+  b: BakeEntry,
+  tempUnit: TempUnit = "c",
+): BakeComparison {
   const mathA = calculateDough(a.formula);
   const mathB = calculateDough(b.formula);
 
@@ -88,8 +93,8 @@ export function buildBakeComparison(a: BakeEntry, b: BakeEntry): BakeComparison 
     { label: "Bulk", section: "Fermentation", a: a.formula.bulkHours, b: b.formula.bulkHours, unit: " h", digits: 1 },
     { label: "Cold retard", section: "Fermentation", a: a.formula.retardHours, b: b.formula.retardHours, unit: " h", digits: 1 },
     { label: "Temper", section: "Fermentation", a: a.formula.temperHours, b: b.formula.temperHours, unit: " h", digits: 1 },
-    { label: "Room temp", section: "Fermentation", a: a.formula.roomTemp, b: b.formula.roomTemp, unit: "°C", digits: 1 },
-    { label: "Fridge temp", section: "Fermentation", a: a.formula.fridgeTemp, b: b.formula.fridgeTemp, unit: "°C", digits: 1 },
+    { label: "Room temp", section: "Fermentation", a: toTempValue(a.formula.roomTemp, tempUnit), b: toTempValue(b.formula.roomTemp, tempUnit), unit: tempSuffix(tempUnit), digits: 1 },
+    { label: "Fridge temp", section: "Fermentation", a: toTempValue(a.formula.fridgeTemp, tempUnit), b: toTempValue(b.formula.fridgeTemp, tempUnit), unit: tempSuffix(tempUnit), digits: 1 },
     { label: "Effective ferment", section: "Fermentation", a: mathA.effectiveHours, b: mathB.effectiveHours, unit: " h", digits: 1 },
     { label: "Overall", section: "Scores", a: a.ratings.overall, b: b.ratings.overall, unit: "/5", digits: 0, higherIsBetter: true },
     { label: "Crust", section: "Scores", a: a.ratings.crust, b: b.ratings.crust, unit: "/5", digits: 0, higherIsBetter: true },

@@ -18,8 +18,10 @@ import {
   Wheat,
 } from "lucide-react";
 import type { DoughMath } from "../lib/calc";
+import { flourBlendLabel, getFlourType } from "../lib/flours";
 import { fmtHours, fmtWeight, fmtWeightValue, round } from "../lib/format";
 import { ingredientLines } from "../lib/recipe";
+import { convertTempText, fmtTemp } from "../lib/temperature";
 import type { Formula, Unit } from "../lib/types";
 import {
   buildRecipeText,
@@ -31,6 +33,7 @@ import {
 import { getOvenProfile } from "../lib/ovens";
 import { buildShareUrl } from "../lib/share";
 import { useAnimatedNumber } from "../hooks/useAnimatedNumber";
+import { useTempUnit } from "./TempUnit";
 import { ActionButton, Badge, Card, cx } from "./ui";
 import { FermentTimeline } from "./FermentTimeline";
 
@@ -40,6 +43,7 @@ const CompositionChart = lazy(() =>
 
 const DOT: Record<string, string> = {
   flour: "#f3e3c8",
+  flour2: "#e0b98b",
   water: "#79c9ff",
   leaven: "#ffb066",
   extra: "#c6f45f",
@@ -102,10 +106,12 @@ export function RecipeOutput({
   const [shared, setShared] = useState(false);
   const [rendering, setRendering] = useState(false);
   const lines = ingredientLines(formula, math, unit);
+  const tempUnit = useTempUnit();
+  const blend = flourBlendLabel(formula);
   const oven = getOvenProfile(formula.ovenProfile);
 
   const handleCopy = async () => {
-    const ok = await copyText(buildRecipeText(formula, unit));
+    const ok = await copyText(buildRecipeText(formula, unit, undefined, tempUnit));
     if (ok) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
@@ -123,7 +129,7 @@ export function RecipeOutput({
   const handleImage = async () => {
     setRendering(true);
     try {
-      await downloadRecipeImage(formula, unit, "Pizza dough formula");
+      await downloadRecipeImage(formula, unit, "Pizza dough formula", tempUnit);
       onToast("Shareable card downloaded", "success");
     } catch {
       onToast("Could not render the share image", "error");
@@ -178,6 +184,7 @@ export function RecipeOutput({
           </div>
           <p className="mt-1.5 text-[11.5px] text-cream/45">
             {math.ballCount} × {fmtWeight(math.ballWeight, unit)} · {formula.hydration}% hydration
+            {blend ? ` · ${blend}` : ""}
           </p>
         </div>
         <div className="text-right">
@@ -200,7 +207,11 @@ export function RecipeOutput({
       <div className="hairline my-4" />
 
       <Suspense fallback={<div className="h-[250px] rounded-2xl bg-white/[0.025]" aria-hidden />}>
-        <CompositionChart math={math} unit={unit} />
+        <CompositionChart
+          math={math}
+          unit={unit}
+          secondaryLabel={formula.flour2Pct > 0 ? getFlourType(formula.flour2Type).label : undefined}
+        />
       </Suspense>
 
       <div className="mt-4">
@@ -249,7 +260,8 @@ export function RecipeOutput({
           <Timer size={11} /> Schedule
         </p>
         <span className="flex items-center gap-1 font-mono text-[10px] text-cream/30">
-          <Thermometer size={10} /> {formula.roomTemp}°C / {formula.fridgeTemp}°C · {oven.short}
+          <Thermometer size={10} /> {fmtTemp(formula.roomTemp, tempUnit)} /{" "}
+          {fmtTemp(formula.fridgeTemp, tempUnit)} · {convertTempText(oven.short, tempUnit)}
         </span>
       </div>
       <div className="mt-2.5">

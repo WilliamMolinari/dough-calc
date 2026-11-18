@@ -23,6 +23,9 @@ import { getStyle } from "../lib/presets";
 import { lineageOf, trialLabel } from "../lib/journal";
 import { OUTCOME_LABELS } from "../lib/outcomes";
 import { ingredientLines, leavenSummary } from "../lib/recipe";
+import { photoSrc } from "../lib/photoFiles";
+import { fmtTemp } from "../lib/temperature";
+import { useTempUnit } from "./TempUnit";
 import { downloadJson, downloadRecipeImage, bakeJson, slugify } from "../lib/exports";
 import type { BakeEntry, Unit } from "../lib/types";
 import { ActionButton, Badge, Modal, Stars, cx } from "./ui";
@@ -70,6 +73,7 @@ export function BakeDetail({
   const [photoIndex, setPhotoIndex] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [rendering, setRendering] = useState(false);
+  const tempUnit = useTempUnit();
 
   if (!bake) return null;
 
@@ -90,7 +94,7 @@ export function BakeDetail({
   const handleImage = async () => {
     setRendering(true);
     try {
-      await downloadRecipeImage(bake.formula, unit, bake.name);
+      await downloadRecipeImage(bake.formula, unit, bake.name, tempUnit);
       onToast("Share card downloaded", "success");
     } catch {
       onToast("Could not render the share image", "error");
@@ -162,7 +166,7 @@ export function BakeDetail({
             {photos.length > 0 ? (
               <>
                 <img
-                  src={photos[activePhotoIndex]}
+                  src={photoSrc(photos[activePhotoIndex])}
                   alt={`${bake.name} — photo ${activePhotoIndex + 1} of ${photos.length}`}
                   className="h-full w-full object-cover"
                 />
@@ -223,7 +227,7 @@ export function BakeDetail({
                       : "border-white/10 opacity-65 hover:opacity-100",
                   )}
                 >
-                  <img src={photo} alt="" className="h-full w-full object-cover" />
+                  <img src={photoSrc(photo)} alt="" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -413,16 +417,20 @@ export function BakeDetail({
                 </p>
                 <div className="mt-1.5 grid grid-cols-3 gap-1.5">
                   {([
-                    ["Dough", bake.actuals.doughTempC, "°C"],
-                    ["Room", bake.actuals.roomTempC, "°C"],
-                    ["Bake", bake.actuals.bakeMinutes, "min"],
-                  ] as const).map(([label, value, suffix]) => (
+                    ["Dough", bake.actuals.doughTempC, true],
+                    ["Room", bake.actuals.roomTempC, true],
+                    ["Bake", bake.actuals.bakeMinutes, false],
+                  ] as const).map(([label, value, isTemp]) => (
                     <div key={label} className="rounded-xl border border-white/8 bg-black/15 px-2 py-1.5">
                       <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-cream/25">
                         {label}
                       </p>
                       <p className="mt-0.5 font-mono text-[12px] text-cream/80">
-                        {value === undefined ? "—" : `${value}${suffix}`}
+                        {value === undefined
+                          ? "—"
+                          : isTemp
+                            ? fmtTemp(value, tempUnit)
+                            : `${value} min`}
                       </p>
                     </div>
                   ))}

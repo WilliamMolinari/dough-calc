@@ -4,6 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Relative asset URLs so the same build works from a web root and from the
+  // Electron app loading dist/index.html over file://.
+  base: "./",
   server: {
     host: "0.0.0.0",
     port: 3000,

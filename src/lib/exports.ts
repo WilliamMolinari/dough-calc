@@ -1,7 +1,8 @@
 import { buildSchedule, calculateDough } from "./calc";
 import { fmtWeight, fmtClock, fmtDay } from "./format";
 import { ingredientLines, leavenSummary, YEAST_LABEL } from "./recipe";
-import type { BakeEntry, Formula, Unit } from "./types";
+import { fmtTemp } from "./temperature";
+import type { BakeEntry, Formula, TempUnit, Unit } from "./types";
 
 export function slugify(value: string): string {
   return (
@@ -13,10 +14,15 @@ export function slugify(value: string): string {
   );
 }
 
-export function buildRecipeText(formula: Formula, unit: Unit, title?: string): string {
+export function buildRecipeText(
+  formula: Formula,
+  unit: Unit,
+  title?: string,
+  tempUnit: TempUnit = "c",
+): string {
   const math = calculateDough(formula);
   const lines = ingredientLines(formula, math, unit);
-  const schedule = buildSchedule(formula);
+  const schedule = buildSchedule(formula, undefined, tempUnit);
   const ready = schedule[schedule.length - 1];
 
   const weigh = lines.map((line) => {
@@ -40,8 +46,10 @@ export function buildRecipeText(formula: Formula, unit: Unit, title?: string): s
       : "",
     "",
     "FERMENT",
-    `  Bulk ${formula.bulkHours} h at ${formula.roomTemp}°C`,
-    formula.retardHours > 0 ? `  Cold retard ${formula.retardHours} h at ${formula.fridgeTemp}°C` : "",
+    `  Bulk ${formula.bulkHours} h at ${fmtTemp(formula.roomTemp, tempUnit)}`,
+    formula.retardHours > 0
+      ? `  Cold retard ${formula.retardHours} h at ${fmtTemp(formula.fridgeTemp, tempUnit)}`
+      : "",
     formula.temperHours > 0 ? `  Temper ${formula.temperHours} h at room temperature` : "",
     ready ? `  Bake around ${fmtClock(ready.at)} — ${fmtDay(ready.at)}` : "",
     "",
@@ -71,9 +79,10 @@ export function downloadScheduleIcs(
   formula: Formula,
   title: string,
   startAt: Date = new Date(),
+  tempUnit: TempUnit = "c",
 ): void {
   const stamp = icsStamp(new Date());
-  const events = buildSchedule(formula, startAt).map((step, index) => {
+  const events = buildSchedule(formula, startAt, tempUnit).map((step, index) => {
     const end = new Date(step.at.getTime() + 15 * 60_000);
     return [
       "BEGIN:VEVENT",
@@ -210,10 +219,11 @@ export async function downloadRecipeImage(
   formula: Formula,
   unit: Unit,
   title: string,
+  tempUnit: TempUnit = "c",
 ): Promise<void> {
   const math = calculateDough(formula);
   const lines = ingredientLines(formula, math, unit);
-  const schedule = buildSchedule(formula);
+  const schedule = buildSchedule(formula, undefined, tempUnit);
   const ready = schedule[schedule.length - 1];
 
   if (document.fonts && document.fonts.ready) {
@@ -318,6 +328,7 @@ export async function downloadRecipeImage(
 
   const accentFor: Record<string, string> = {
     flour: "#f3e3c8",
+    flour2: "#e0b98b",
     water: "#79c9ff",
     leaven: "#ffb066",
     extra: "#c6f45f",
@@ -357,8 +368,10 @@ export async function downloadRecipeImage(
   y += 44;
 
   const fermentBits = [
-    `${formula.bulkHours} h bulk · ${formula.roomTemp}°C`,
-    formula.retardHours > 0 ? `${formula.retardHours} h cold · ${formula.fridgeTemp}°C` : null,
+    `${formula.bulkHours} h bulk · ${fmtTemp(formula.roomTemp, tempUnit)}`,
+    formula.retardHours > 0
+      ? `${formula.retardHours} h cold · ${fmtTemp(formula.fridgeTemp, tempUnit)}`
+      : null,
     formula.temperHours > 0 ? `${formula.temperHours} h temper` : null,
   ].filter(Boolean) as string[];
 

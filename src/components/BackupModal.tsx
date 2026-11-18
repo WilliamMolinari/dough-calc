@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Download, HardDriveDownload, RotateCcw, Upload } from "lucide-react";
 import { formatBytes, createBackup, mergeBakes, parseBackup } from "../lib/backup";
 import { downloadJson } from "../lib/exports";
+import { inlinePhotos, isStoredPhoto } from "../lib/photoFiles";
 import { readStored, STORAGE_KEYS } from "../lib/storage";
 import type { BakeEntry, Formula, Unit } from "../lib/types";
 import { ActionButton, Badge, Modal, cx } from "./ui";
@@ -32,6 +33,7 @@ export function BackupModal({
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [lastBackup, setLastBackup] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -49,18 +51,40 @@ export function BackupModal({
   }, [open]);
 
   const photoCount = bakes.reduce((sum, bake) => sum + bake.photos.length, 0);
-  const download = () => {
-    const now = new Date().toISOString();
-    const backup = createBackup(bakes, formula, unit);
-    const json = JSON.stringify(backup, null, 2);
-    downloadJson(backup, `doughlab-backup-${now.slice(0, 10)}.json`);
+  const download = async () => {
+    if (exporting) return;
+    setExporting(true);
     try {
-      localStorage.setItem(STORAGE_KEYS.lastBackup, JSON.stringify(now));
+      // Photos the desktop app saved as files are read back into the JSON so a
+      // backup stays portable to another machine.
+      const portable = await Promise.all(
+        bakes.map(async (bake) => ({ ...bake, photos: await inlinePhotos(bake.photos) })),
+      );
+      const now = new Date().toISOString();
+      const backup = createBackup(portable, formula, unit);
+      const json = JSON.stringify(backup, null, 2);
+      downloadJson(backup, `doughlab-backup-${now.slice(0, 10)}.json`);
+      try {
+        localStorage.setItem(STORAGE_KEYS.lastBackup, JSON.stringify(now));
+      } catch {
+        /* best effort */
+      }
+      setLastBackup(now);
+      const missing = portable.reduce(
+        (sum, bake) => sum + bake.photos.filter(isStoredPhoto).length,
+        0,
+      );
+      onToast(
+        missing
+          ? `Backup exported — ${missing} photo file${missing === 1 ? "" : "s"} could not be read, so their references were kept`
+          : `Backup exported — ${portable.length} bakes, ${formatBytes(json.length)}`,
+        missing ? "info" : "success",
+      );
     } catch {
-      /* best effort */
+      onToast("Could not build the backup", "error");
+    } finally {
+      setExporting(false);
     }
-    setLastBackup(now);
-    onToast(`Backup exported — ${bakes.length} bakes, ${formatBytes(json.length)}`, "success");
   };
 
   const handleFile = async (file: File | undefined) => {
@@ -161,10 +185,12 @@ export function BackupModal({
               </p>
               <button
                 type="button"
-                onClick={download}
-                className="btn-ember sheen mt-2.5 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold"
+                onClick={() => void download()}
+                disabled={exporting}
+                className="btn-ember sheen mt-2.5 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold disabled:opacity-60"
               >
-                <HardDriveDownload size={13} /> Download backup
+                <HardDriveDownload size={13} />
+                {exporting ? "Gathering photos…" : "Download backup"}
               </button>
             </div>
           </div>

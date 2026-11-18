@@ -10,6 +10,9 @@ import {
   type ComparisonSection,
 } from "../lib/compare";
 import { comparisonTarget, lineageOf } from "../lib/journal";
+import { photoSrc } from "../lib/photoFiles";
+import { fmtTemp } from "../lib/temperature";
+import { useTempUnit } from "./TempUnit";
 import type { BakeEntry, Unit } from "../lib/types";
 import { cx } from "./ui";
 
@@ -35,6 +38,7 @@ export function BakeComparison({
   const [explainError, setExplainError] = useState<string | null>(null);
   const [explaining, setExplaining] = useState(false);
   const explainAbort = useRef<AbortController | null>(null);
+  const tempUnit = useTempUnit();
   const others = bakes.filter((item) => item.id !== bake.id);
   // Default to the parent trial (or the nearest neighbour) rather than an unrelated bake.
   const comparison = others.find((item) => item.id === compareId) ?? comparisonTarget(bake, bakes);
@@ -61,7 +65,9 @@ export function BakeComparison({
     );
   }
 
-  const { rows, meta } = buildBakeComparison(bake, comparison);
+  const { rows, meta } = buildBakeComparison(bake, comparison, tempUnit);
+  const describeActual = (value: number | undefined, isTemp: boolean) =>
+    value === undefined ? "—" : isTemp ? fmtTemp(value, tempUnit) : `${value} min`;
   const lineage = lineageOf(bake, bakes);
   const comparisonLineage = lineageOf(comparison, bakes);
   const sameFamily = lineage.family.some((item) => item.id === comparison.id);
@@ -144,7 +150,7 @@ export function BakeComparison({
                     )}
                   >
                     <img
-                      src={item.photos[0]}
+                      src={photoSrc(item.photos[0])}
                       alt={`${item.name} crumb`}
                       loading="lazy"
                       className={cx(
@@ -169,18 +175,17 @@ export function BakeComparison({
       {(bake.actuals || comparison.actuals) && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {([
-            ["Dough", bake.actuals?.doughTempC, comparison.actuals?.doughTempC, "°C"],
-            ["Room", bake.actuals?.roomTempC, comparison.actuals?.roomTempC, "°C"],
-            ["Bake", bake.actuals?.bakeMinutes, comparison.actuals?.bakeMinutes, "min"],
-          ] as const).map(([label, a, b, suffix]) =>
+            ["Dough", bake.actuals?.doughTempC, comparison.actuals?.doughTempC, true],
+            ["Room", bake.actuals?.roomTempC, comparison.actuals?.roomTempC, true],
+            ["Bake", bake.actuals?.bakeMinutes, comparison.actuals?.bakeMinutes, false],
+          ] as const).map(([label, a, b, isTemp]) =>
             a === undefined && b === undefined ? null : (
               <span
                 key={label}
                 className="rounded-full border border-white/8 bg-white/[0.03] px-2 py-1 font-mono text-[9.5px] text-cream/45"
               >
-                <span className="text-cream/25">{label}</span> {a ?? "—"}
-                {a === undefined ? "" : suffix} → {b ?? "—"}
-                {b === undefined ? "" : suffix}
+                <span className="text-cream/25">{label}</span> {describeActual(a, isTemp)} →{" "}
+                {describeActual(b, isTemp)}
               </span>
             ),
           )}

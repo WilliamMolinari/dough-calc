@@ -12,6 +12,7 @@ import {
 import { buildSchedule, type ScheduleStep } from "../lib/calc";
 import { fmtClock, fmtDay } from "../lib/format";
 import type { Formula } from "../lib/types";
+import { useTempUnit } from "./TempUnit";
 import { cx } from "./ui";
 
 const ICONS: Record<ScheduleStep["kind"], LucideIcon> = {
@@ -41,7 +42,8 @@ export function FermentTimeline({
   formula: Formula;
   compact?: boolean;
 }) {
-  const steps = useMemo(() => buildSchedule(formula), [formula]);
+  const tempUnit = useTempUnit();
+  const steps = useMemo(() => buildSchedule(formula, undefined, tempUnit), [formula, tempUnit]);
   const visible = compact
     ? steps.filter((step) => step.key !== "folds" && step.kind !== "fire")
     : steps;

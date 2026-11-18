@@ -52,7 +52,10 @@ const TEMPERATURE_IN_TEXT = /(-?\d+(?:\.\d+)?)(?:\s*[–—-]\s*(\d+(?:\.\d+)?))
 export function convertTempText(text: string, unit: TempUnit): string {
   if (unit === "c" || !text.includes("°C")) return text;
   return text.replace(TEMPERATURE_IN_TEXT, (_match, low: string, high?: string) => {
-    const fahrenheit = (value: string) => `${fmtNumber(toTempValue(Number(value), "f"), 0)}°F`;
-    return high ? `${fahrenheit(low)}–${fahrenheit(high)}` : fahrenheit(low);
+    const fahrenheit = (value: string) => fmtNumber(toTempValue(Number(value), "f"), 0);
+    // A range keeps one unit at the end: "430–450°C" → "806–842°F".
+    return high
+      ? `${fahrenheit(low)}–${fahrenheit(high)}${tempSuffix(unit)}`
+      : `${fahrenheit(low)}${tempSuffix(unit)}`;
   });
 }

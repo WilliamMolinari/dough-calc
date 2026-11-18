@@ -2,10 +2,13 @@ import { createPortal } from "react-dom";
 import { Printer } from "lucide-react";
 import type { DoughMath } from "../lib/calc";
 import { buildSchedule } from "../lib/calc";
+import { flourBlendLabel } from "../lib/flours";
 import { fmtClock, fmtDay, fmtWeight } from "../lib/format";
+import { fmtTemp } from "../lib/temperature";
 import { ingredientLines, leavenSummary } from "../lib/recipe";
 import type { Formula, Unit } from "../lib/types";
 import { getStyle } from "../lib/presets";
+import { useTempUnit } from "./TempUnit";
 import { ActionButton, Modal } from "./ui";
 
 function RecipeCardContent({
@@ -21,6 +24,8 @@ function RecipeCardContent({
 }) {
   const lines = ingredientLines(formula, math, unit);
   const style = getStyle(formula.styleId);
+  const tempUnit = useTempUnit();
+  const blend = flourBlendLabel(formula);
   const schedule = buildSchedule(formula);
   const bake = schedule[schedule.length - 1];
 
@@ -82,12 +87,12 @@ function RecipeCardContent({
           <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#a1522a]">Ferment</p>
           <ul className="mt-2 space-y-1.5 text-[11.5px] leading-snug">
             <li className="flex items-baseline justify-between gap-2 border-b border-dotted border-[#201a14]/18 pb-1.5">
-              <span>Bulk · {formula.roomTemp}°C</span>
+              <span>Bulk · {fmtTemp(formula.roomTemp, tempUnit)}</span>
               <span className="font-mono">{formula.bulkHours} h</span>
             </li>
             {formula.retardHours > 0 && (
               <li className="flex items-baseline justify-between gap-2 border-b border-dotted border-[#201a14]/18 pb-1.5">
-                <span>Cold retard · {formula.fridgeTemp}°C</span>
+                <span>Cold retard · {fmtTemp(formula.fridgeTemp, tempUnit)}</span>
                 <span className="font-mono">{formula.retardHours} h</span>
               </li>
             )}
@@ -120,7 +125,9 @@ function RecipeCardContent({
       </div>
 
       <div className="mt-3 flex items-center justify-between font-mono text-[8.5px] uppercase tracking-[0.18em] text-[#8a7a67]">
-        <span>{fmtWeight(math.flour, unit)} flour · {formula.salt}% salt</span>
+        <span>
+          {fmtWeight(math.flour, unit)} flour{blend ? ` · ${blend}` : ""} · {formula.salt}% salt
+        </span>
         <span>Made with DoughLab</span>
       </div>
     </div>

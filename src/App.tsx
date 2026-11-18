@@ -20,6 +20,7 @@ import {
 import { bakeReadyAt, calculateDough, yeastForType } from "./lib/calc";
 import { fmtClock, fmtDay, fmtWeight, round } from "./lib/format";
 import { getOvenProfile } from "./lib/ovens";
+import { convertTempText, fmtTemp } from "./lib/temperature";
 import { getStyle, type StylePreset } from "./lib/presets";
 import { readShareFromLocation } from "./lib/share";
 import {
@@ -28,6 +29,7 @@ import {
   estimateStorage,
   loadBakes,
   loadFormula,
+  loadTempUnit,
   loadUnit,
   measureStoredBytes,
   readStored,
@@ -35,10 +37,12 @@ import {
   writeStored,
 } from "./lib/storage";
 import { journalDbSupported, loadJournalFromDb, saveJournalToDb } from "./lib/journalDb";
+import { materializePhotos } from "./lib/photoFiles";
 import { deleteBakeEntry, duplicateBakeEntry, nextTrialName, rootIdOf } from "./lib/journal";
 import { adjustFormula, trialChangeLabel, type TrialVariable } from "./lib/experiments";
-import type { BakeEntry, Formula, Toast, ToastAction, Unit } from "./lib/types";
+import type { BakeEntry, Formula, TempUnit, Toast, ToastAction, Unit } from "./lib/types";
 import { CalculatorForm } from "./components/CalculatorForm";
+import { TempUnitProvider, useTempUnit } from "./components/TempUnit";
 import { PresetSelector } from "./components/PresetSelector";
 import { RecipeOutput } from "./components/RecipeOutput";
 import { Journal } from "./components/Journal";
@@ -117,6 +121,7 @@ function Hero({
   totalDough: number;
   bakes: BakeEntry[];
 }) {
+  const tempUnit = useTempUnit();
   const style = getStyle(formula.styleId);
   const oven = getOvenProfile(formula.ovenProfile);
   const ready = bakeReadyAt(formula);
@@ -220,10 +225,15 @@ function Hero({
               </>
             ) : (
               <>
-                <HeroStat label="Oven" value={oven.name} sub={oven.short} icon={Flame} />
+                <HeroStat
+                  label="Oven"
+                  value={oven.name}
+                  sub={convertTempText(oven.short, tempUnit)}
+                  icon={Flame}
+                />
                 <HeroStat
                   label="Deck"
-                  value={`${oven.tempC}°C`}
+                  value={fmtTemp(oven.tempC, tempUnit)}
                   sub={`${oven.preheatMin} min preheat`}
                   icon={Thermometer}
                 />
@@ -319,6 +329,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("calculator");
   const [formula, setFormula] = useState<Formula>(() => loadFormula());
   const [unit, setUnit] = useState<Unit>(() => loadUnit());
+  const [tempUnit, setTempUnit] = useState<TempUnit>(() => loadTempUnit());
   const [bakes, setBakes] = useState<BakeEntry[]>(() => loadBakes());
   const [storageInfo, setStorageInfo] = useState(() => ({
     bytes: measureStoredBytes(),
@@ -425,6 +436,10 @@ export default function App() {
   useEffect(() => {
     writeStored(STORAGE_KEYS.unit, unit);
   }, [unit]);
+
+  useEffect(() => {
+    writeStored(STORAGE_KEYS.tempUnit, tempUnit);
+  }, [tempUnit]);
 
   // Two tabs both writing localStorage would silently lose entries. Surface it
   // instead of auto-reloading, which could discard what this tab is editing.
@@ -557,7 +572,10 @@ export default function App() {
     setSaveOpen(true);
   };
 
-  const handleSaveBake = (draft: BakeDraft) => {
+  const handleSaveBake = async (draft: BakeDraft) => {
+    // In the desktop app the resized photos become ordinary files in the chosen
+    // folder first; a write that fails keeps that photo inline in the journal.
+    const photos = await materializePhotos(draft.photos);
     if (editingBake) {
       const updatedAt = new Date().toISOString();
       setBakes((prev) =>
@@ -572,7 +590,7 @@ export default function App() {
                 flourBrand: draft.flourBrand,
                 oven: draft.oven,
                 tags: draft.tags,
-                photos: draft.photos,
+                photos,
                 outcomeTags: draft.outcomeTags,
                 hypothesis: draft.hypothesis,
                 actuals: draft.actuals,
@@ -602,7 +620,7 @@ export default function App() {
       flourBrand: draft.flourBrand,
       oven: draft.oven,
       tags: draft.tags,
-      photos: draft.photos,
+      photos,
       outcomeTags: draft.outcomeTags,
       hypothesis: draft.hypothesis,
       actuals: draft.actuals,
@@ -617,6 +635,21 @@ export default function App() {
       "success",
     );
   };
+
+  /** Desktop only: move photos that still sit in the journal onto disk. */
+  const movePhotosToFolder = useCallback(async () => {
+    let moved = 0;
+    const next = await Promise.all(
+      bakes.map(async (bake) => {
+        const photos = await materializePhotos(bake.photos);
+        if (photos.every((photo, index) => photo === bake.photos[index])) return bake;
+        moved += photos.filter((photo, index) => photo !== bake.photos[index]).length;
+        return { ...bake, photos, updatedAt: new Date().toISOString() };
+      }),
+    );
+    if (moved) setBakes(next);
+    return moved;
+  }, [bakes]);
 
   const editBake = (bake: BakeEntry) => {
     // Keep the detail open underneath so focus and context return there after saving.
@@ -748,7 +781,8 @@ export default function App() {
   const style = getStyle(effectiveFormula.styleId);
 
   return (
-    <div className="relative min-h-dvh">
+    <TempUnitProvider value={tempUnit}>
+      <div className="relative min-h-dvh">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[90] focus:rounded-xl focus:bg-cream focus:px-3 focus:py-2 focus:text-[12px] focus:font-semibold focus:text-ink"
@@ -811,8 +845,8 @@ export default function App() {
           <div className="flex items-center gap-2">
             <div
               role="group"
-              aria-label="Measurement unit"
-              className="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-0.5"
+              aria-label="Units"
+              className="flex items-center gap-0.5 rounded-full border border-white/10 bg-white/[0.03] p-0.5"
             >
               {(["g", "oz"] as Unit[]).map((value) => (
                 <button
@@ -828,6 +862,27 @@ export default function App() {
                   )}
                 >
                   {value}
+                </button>
+              ))}
+              <span aria-hidden className="mx-0.5 h-3.5 w-px bg-white/12" />
+              {([
+                { value: "c" as const, label: "°C" },
+                { value: "f" as const, label: "°F" },
+              ]).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setTempUnit(option.value)}
+                  aria-pressed={tempUnit === option.value}
+                  aria-label={option.value === "c" ? "Show temperatures in Celsius" : "Show temperatures in Fahrenheit"}
+                  className={cx(
+                    "rounded-full px-2 py-1 font-mono text-[10px] transition-colors",
+                    tempUnit === option.value
+                      ? "bg-cream text-ink"
+                      : "text-cream/40 hover:text-cream/80",
+                  )}
+                >
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -934,6 +989,7 @@ export default function App() {
               onBackup={() => setBackupOpen(true)}
               onRate={rateBake}
               onMarkBaked={markBaked}
+              onMovePhotos={movePhotosToFolder}
             />
           ) : (
             <DinnerPlanner
@@ -1063,6 +1119,7 @@ export default function App() {
 
       <BakeChatbot />
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
-    </div>
+      </div>
+    </TempUnitProvider>
   );
 }

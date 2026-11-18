@@ -5,6 +5,7 @@ import type { Unit } from "../lib/types";
 
 const COLORS = {
   flour: "#f3e3c8",
+  flour2: "#e0b98b",
   water: "#79c9ff",
   extras: "#c6f45f",
   yeast: "#ffb066",
@@ -13,12 +14,19 @@ const COLORS = {
 export function CompositionChart({
   math,
   unit,
+  secondaryLabel,
 }: {
   math: DoughMath;
   unit: Unit;
+  /** Name of the second flour, when a blend is active. */
+  secondaryLabel?: string;
 }) {
+  const secondary = Math.min(Math.max(0, math.flourSecondary ?? 0), math.flour);
   const data = [
-    { name: "Flour", value: math.flour, color: COLORS.flour },
+    { name: secondary > 0.5 ? "Base flour" : "Flour", value: math.flour - secondary, color: COLORS.flour },
+    ...(secondary > 0.5
+      ? [{ name: secondaryLabel ?? "Second flour", value: secondary, color: COLORS.flour2 }]
+      : []),
     { name: "Water", value: math.water, color: COLORS.water },
     { name: "Salt & extras", value: math.salt + math.sweetener + math.oil, color: COLORS.extras },
     ...(math.yeast > 0.0001

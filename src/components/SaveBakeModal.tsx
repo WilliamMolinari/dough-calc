@@ -3,9 +3,11 @@ import { BookmarkPlus, Save, X } from "lucide-react";
 import { OVEN_OPTIONS, TAG_SUGGESTIONS, getStyle } from "../lib/presets";
 import { getOvenProfile } from "../lib/ovens";
 import { fmtWeight } from "../lib/format";
+import { fromTempValue, tempForInput, tempSuffix } from "../lib/temperature";
 import { OUTCOME_TAGS } from "../lib/outcomes";
 import type { DoughMath } from "../lib/calc";
 import type { BakeActuals, Formula, Ratings, Unit } from "../lib/types";
+import { useTempUnit } from "./TempUnit";
 import { ActionButton, Modal, Stars, cx } from "./ui";
 import { MAX_PHOTOS, PhotoUpload } from "./PhotoUpload";
 
@@ -78,6 +80,7 @@ export function SaveBakeModal({
   onToast: (message: string, tone?: "success" | "error" | "info") => void;
 }) {
   const style = getStyle(formula.styleId);
+  const tempUnit = useTempUnit();
   const profileOven = getOvenProfile(formula.ovenProfile).logName;
   const defaultOven = OVEN_OPTIONS.includes(profileOven) ? profileOven : OVEN_OPTIONS[0];
   const [name, setName] = useState(defaultName(style.name));
@@ -155,10 +158,21 @@ export function SaveBakeModal({
   };
 
   const setActual = (key: keyof BakeActuals, raw: string) => {
-    setActuals((prev) => ({
-      ...prev,
-      [key]: raw.trim() === "" ? undefined : Number(raw),
-    }));
+    const trimmed = raw.trim();
+    setActuals((prev) => {
+      if (trimmed === "") return { ...prev, [key]: undefined };
+      const parsed = Number(trimmed);
+      if (!Number.isFinite(parsed)) return prev;
+      // Temperatures are stored in Celsius whatever unit is on screen.
+      const value = key === "bakeMinutes" ? parsed : fromTempValue(parsed, tempUnit);
+      return { ...prev, [key]: Math.round(value * 10) / 10 };
+    });
+  };
+
+  const actualValue = (key: keyof BakeActuals): string => {
+    const value = actuals[key];
+    if (value === undefined) return "";
+    return key === "bakeMinutes" ? String(value) : String(tempForInput(value, tempUnit));
   };
 
   const toggleOutcome = (key: string) => {
@@ -380,8 +394,18 @@ export function SaveBakeModal({
           </div>
           <div className="mt-1.5 grid grid-cols-3 gap-2">
             {([
-              { key: "doughTempC", label: "Dough", suffix: "°C", max: 60 },
-              { key: "roomTempC", label: "Room", suffix: "°C", max: 60 },
+              {
+                key: "doughTempC",
+                label: "Dough",
+                suffix: tempSuffix(tempUnit),
+                max: tempForInput(60, tempUnit),
+              },
+              {
+                key: "roomTempC",
+                label: "Room",
+                suffix: tempSuffix(tempUnit),
+                max: tempForInput(60, tempUnit),
+              },
               { key: "bakeMinutes", label: "Bake", suffix: "min", max: 180 },
             ] as const).map((field) => (
               <label key={field.key} className="block">
@@ -393,7 +417,7 @@ export function SaveBakeModal({
                   inputMode="decimal"
                   min={0}
                   max={field.max}
-                  value={actuals[field.key] ?? ""}
+                  value={actualValue(field.key)}
                   onChange={(event) => setActual(field.key, event.target.value)}
                   placeholder="—"
                   className="mt-1 w-full rounded-xl border border-white/10 bg-black/25 px-2.5 py-2 font-mono text-[12px] text-cream outline-none placeholder:text-cream/20 focus:border-ember/60"

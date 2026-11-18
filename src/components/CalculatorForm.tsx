@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import type { DoughMath } from "../lib/calc";
 import { yeastForType } from "../lib/calc";
+import { FLOUR_TYPES, getFlourType } from "../lib/flours";
 import { fmtWeight, round, toUnit, G_PER_OZ, clamp } from "../lib/format";
+import { fmtTemp, tempForInput, tempFromInput, tempSuffix } from "../lib/temperature";
 import type { Formula, SweetenerKind, Unit, YeastType } from "../lib/types";
 import {
   Badge,
@@ -28,6 +30,7 @@ import {
   cx,
 } from "./ui";
 import { OvenProfilePicker } from "./OvenProfilePicker";
+import { useTempUnit } from "./TempUnit";
 
 const LEAVEN_OPTIONS = [
   { value: "sourdough" as const, label: "Sourdough", icon: FlaskConical },
@@ -86,6 +89,8 @@ export function CalculatorForm({
   onChange: (patch: Partial<Formula>) => void;
 }) {
   const set = <K extends keyof Formula>(key: K, value: Formula[K]) => onChange({ [key]: value } as Partial<Formula>);
+  const tempUnit = useTempUnit();
+  const blendActive = formula.flour2Pct > 0;
 
   const flourDisplay = round(toUnit(formula.flourWeight, unit), unit === "g" ? 0 : 1);
   const ballDisplay = round(toUnit(formula.ballWeight, unit), unit === "g" ? 0 : 1);
@@ -189,6 +194,58 @@ export function CalculatorForm({
               </p>
               <p className="mt-0.5 font-mono text-[15px] tabular-nums text-cream/85">
                 {fmtWeight(math.ballWeight, unit)}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/8 bg-black/20 p-3">
+          <Toggle
+            label="Blend a second flour"
+            checked={blendActive}
+            onChange={(checked) => set("flour2Pct", checked ? Math.max(10, formula.flour2Pct) : 0)}
+            description="Split the total flour between two flours — whole wheat, rye or semolina for flavour."
+          />
+          {blendActive && (
+            <div className="mt-3 space-y-2.5">
+              <div role="group" aria-label="Second flour" className="grid grid-cols-3 gap-1.5">
+                {FLOUR_TYPES.map((flour) => {
+                  const active = formula.flour2Type === flour.id;
+                  return (
+                    <button
+                      key={flour.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => set("flour2Type", flour.id)}
+                      className={cx(
+                        "rounded-lg border px-1.5 py-1.5 text-[11px] transition-colors",
+                        active
+                          ? "border-ember/40 bg-ember/12 text-cream"
+                          : "border-white/8 bg-white/[0.02] text-cream/45 hover:border-white/18 hover:text-cream/80",
+                      )}
+                    >
+                      {flour.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <SliderField
+                label="Second flour share"
+                value={formula.flour2Pct}
+                onChange={(value) => set("flour2Pct", value)}
+                min={5}
+                max={50}
+                step={5}
+                suffix="%"
+                hint={`${fmtWeight(math.flourSecondary, unit)} ${getFlourType(
+                  formula.flour2Type,
+                ).label.toLowerCase()} + ${fmtWeight(
+                  Math.max(0, math.flour - math.flourSecondary),
+                  unit,
+                )} base flour of ${fmtWeight(math.flour, unit)} total.`}
+              />
+              <p className="text-[10.5px] leading-relaxed text-cream/35">
+                {getFlourType(formula.flour2Type).note}
               </p>
             </div>
           )}
@@ -304,7 +361,7 @@ export function CalculatorForm({
                 description={`Lab suggests ${suggestedStarter}% for ${math.effectiveHours.toFixed(1)} effective hours`}
               />
               <p className="rounded-xl border border-lime/15 bg-lime/[0.05] px-3 py-2 text-[11px] leading-relaxed text-lime/70">
-                Sourdough is temperature-sensitive: at {formula.roomTemp}°C your {formula.hydration}%
+                Sourdough is temperature-sensitive: at {fmtTemp(formula.roomTemp, tempUnit)} your {formula.hydration}%
                 dough wants roughly {suggestedStarter}% starter. Use a ripe, doubled starter.
               </p>
             </div>
@@ -419,21 +476,21 @@ export function CalculatorForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <SliderField
             label="Room temperature"
-            value={formula.roomTemp}
-            onChange={(value) => set("roomTemp", value)}
-            min={14}
-            max={32}
-            step={0.5}
-            suffix="°C"
+            value={tempForInput(formula.roomTemp, tempUnit)}
+            onChange={(value) => set("roomTemp", tempFromInput(value, tempUnit))}
+            min={tempForInput(14, tempUnit)}
+            max={tempForInput(32, tempUnit)}
+            step={tempUnit === "f" ? 1 : 0.5}
+            suffix={tempSuffix(tempUnit)}
           />
           <SliderField
             label="Fridge temperature"
-            value={formula.fridgeTemp}
-            onChange={(value) => set("fridgeTemp", value)}
-            min={0}
-            max={10}
-            step={0.5}
-            suffix="°C"
+            value={tempForInput(formula.fridgeTemp, tempUnit)}
+            onChange={(value) => set("fridgeTemp", tempFromInput(value, tempUnit))}
+            min={tempForInput(0, tempUnit)}
+            max={tempForInput(10, tempUnit)}
+            step={tempUnit === "f" ? 1 : 0.5}
+            suffix={tempSuffix(tempUnit)}
           />
         </div>
 

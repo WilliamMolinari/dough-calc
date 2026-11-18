@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Camera, ImagePlus, Loader2, X } from "lucide-react";
+import { photoSrc } from "../lib/photoFiles";
 import { cx } from "./ui";
 
 export const MAX_PHOTOS = 6;
@@ -114,7 +115,7 @@ export function PhotoUpload({
               className="group relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-black/30"
             >
               <img
-                src={photo}
+                src={photoSrc(photo)}
                 alt={`Bake photo ${index + 1}`}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />

@@ -20,6 +20,7 @@ import { STORAGE_KEYS, readStored, writeStored } from "../lib/storage";
 import { MAX_TIMER_MINUTES, clampTimerMinutes, formatCountdown, minutesUntil } from "../lib/timer";
 import type { Formula } from "../lib/types";
 import { useDialogLayer } from "../hooks/useDialogLayer";
+import { useTempUnit } from "./TempUnit";
 import { cx } from "./ui";
 
 function relative(target: Date, now: Date): string {
@@ -68,9 +69,10 @@ export function KitchenMode({
   title: string;
   startAt?: number;
 }) {
+  const tempUnit = useTempUnit();
   const steps = useMemo(
-    () => buildSchedule(formula, startAt ? new Date(startAt) : undefined),
-    [formula, startAt],
+    () => buildSchedule(formula, startAt ? new Date(startAt) : undefined, tempUnit),
+    [formula, startAt, tempUnit],
   );
   const [checked, setChecked] = useState<Set<string>>(() => {
     const initial = new Date();
@@ -344,7 +346,14 @@ export function KitchenMode({
           </div>
           <button
             type="button"
-            onClick={() => downloadScheduleIcs(formula, title, startAt ? new Date(startAt) : undefined)}
+            onClick={() =>
+              downloadScheduleIcs(
+                formula,
+                title,
+                startAt ? new Date(startAt) : undefined,
+                tempUnit,
+              )
+            }
             aria-label="Add the schedule to your calendar"
             title="Download a calendar file with an alarm before every step"
             className="grid size-10 shrink-0 place-items-center rounded-full border border-white/12 bg-white/[0.05] text-cream/45 transition-colors hover:text-cream"

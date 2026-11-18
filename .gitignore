@@ -6,3 +6,4 @@ dist
 *.tsbuildinfo
 /freebuff-sites-build/
 /artifacts/
+/release/

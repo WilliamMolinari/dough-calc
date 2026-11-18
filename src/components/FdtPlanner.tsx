@@ -9,10 +9,23 @@ import {
   saveFdtSettings,
   type FdtSettings,
 } from "../lib/fdt";
-import { fmtNumber } from "../lib/format";
+import { fmtNumber, round } from "../lib/format";
+import {
+  convertTempText,
+  fmtTemp,
+  fmtTempDelta,
+  fromTempDelta,
+  fromTempValue,
+  tempForInput,
+  tempSuffix,
+  toTempDelta,
+  toTempValue,
+} from "../lib/temperature";
+import { useTempUnit } from "./TempUnit";
 import { Badge, Card, SectionHeading, SliderField, cx } from "./ui";
 
 export function FdtPlanner({ roomTemp }: { roomTemp: number }) {
+  const tempUnit = useTempUnit();
   const [settings, setSettings] = useState<FdtSettings>(() => loadFdtSettings());
   const [measured, setMeasured] = useState("");
   const [waterUsed, setWaterUsed] = useState("");
@@ -20,8 +33,16 @@ export function FdtPlanner({ roomTemp }: { roomTemp: number }) {
 
   const water = estimateWaterTemp(settings, roomTemp);
   const predicted = estimateDoughTemp(water, roomTemp, settings);
-  const measuredValue = Number.parseFloat(measured.replace(",", "."));
-  const waterValue = Number.parseFloat(waterUsed.replace(",", "."));
+  // The engine works in Celsius; the baker types and reads the chosen unit.
+  const toC = (value: number) =>
+    tempUnit === "f" ? round(fromTempValue(value, "f") * 2, 0) / 2 : value;
+  const deltaValue = (celsius: number) => round(toTempDelta(celsius, tempUnit), 1);
+  const display = (celsius: number) =>
+    fmtNumber(toTempValue(celsius, tempUnit), tempUnit === "f" ? 0 : 1);
+  const measuredInput = Number.parseFloat(measured.replace(",", "."));
+  const waterInput = Number.parseFloat(waterUsed.replace(",", "."));
+  const measuredValue = Number.isFinite(measuredInput) ? fromTempValue(measuredInput, tempUnit) : Number.NaN;
+  const waterValue = Number.isFinite(waterInput) ? fromTempValue(waterInput, tempUnit) : Number.NaN;
   const canCalibrate =
     Number.isFinite(measuredValue) &&
     measuredValue >= 0 &&
@@ -48,7 +69,7 @@ export function FdtPlanner({ roomTemp }: { roomTemp: number }) {
     setMeasured("");
     setWaterUsed("");
     setMessage(
-      `Saved. Your kitchen correction is now ${next.offsetC > 0 ? "+" : ""}${next.offsetC}°C across ${next.samples} sample${next.samples === 1 ? "" : "s"}.`,
+      `Saved. Your kitchen correction is now ${next.offsetC > 0 ? "+" : ""}${fmtTempDelta(next.offsetC, tempUnit)} across ${next.samples} sample${next.samples === 1 ? "" : "s"}.`,
     );
   };
 
@@ -78,21 +99,22 @@ export function FdtPlanner({ roomTemp }: { roomTemp: number }) {
           <p className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-ember/80">
             <Droplets size={11} /> Mix water at
           </p>
-          <p className="mt-1 font-display text-[34px] font-semibold leading-none text-cream">
-            {fmtNumber(water, 1)}
-            <span className="ml-1 font-mono text-[14px] text-cream/40">°C</span>
+                    <p className="mt-1 font-display text-[34px] font-semibold leading-none text-cream">
+            {display(water)}
+            <span className="ml-1 font-mono text-[14px] text-cream/40">{tempSuffix(tempUnit)}</span>
           </p>
           <p className="mt-1.5 text-[10.5px] leading-relaxed text-cream/40">
-            Target dough {settings.targetFdt}°C · room {roomTemp}°C · flour {settings.flourTemp}°C ·
-            friction {settings.friction}°C
+            Target dough {fmtTemp(settings.targetFdt, tempUnit)} · room {fmtTemp(roomTemp, tempUnit)} ·
+            flour {fmtTemp(settings.flourTemp, tempUnit)} · friction{" "}
+            {fmtTempDelta(settings.friction, tempUnit)}
           </p>
           <p className="mt-2 font-mono text-[9.5px] text-cream/30">
-            Predicted mix ≈ {fmtNumber(predicted, 1)}°C
+            Predicted mix ≈ {fmtTemp(predicted, tempUnit)}
             {settings.offsetC !== 0 && (
               <span className="text-ember-2/80">
                 {" "}
                 · correction {settings.offsetC > 0 ? "+" : ""}
-                {settings.offsetC}°C
+                {fmtTempDelta(settings.offsetC, tempUnit)}
               </span>
             )}
           </p>
@@ -101,32 +123,43 @@ export function FdtPlanner({ roomTemp }: { roomTemp: number }) {
         <div className="space-y-3">
           <SliderField
             label="Target dough temp"
-            value={settings.targetFdt}
-            onChange={(value) => update({ targetFdt: value })}
-            min={18}
-            max={30}
-            step={0.5}
-            suffix="°C"
-            hint="24°C suits a 2–4 h bulk; go cooler for a long ferment."
+            value={tempForInput(settings.targetFdt, tempUnit)}
+            onChange={(value) => update({ targetFdt: toC(value) })}
+            min={tempForInput(18, tempUnit)}
+            max={tempForInput(30, tempUnit)}
+            step={tempUnit === "f" ? 1 : 0.5}
+            suffix={tempSuffix(tempUnit)}
+            hint={convertTempText(
+              "24°C suits a 2–4 h bulk; go cooler for a long ferment.",
+              tempUnit,
+            )}
           />
           <SliderField
             label="Flour temperature"
-            value={settings.flourTemp}
-            onChange={(value) => update({ flourTemp: value })}
-            min={5}
-            max={35}
-            step={0.5}
-            suffix="°C"
+            value={tempForInput(settings.flourTemp, tempUnit)}
+            onChange={(value) => update({ flourTemp: toC(value) })}
+            min={tempForInput(5, tempUnit)}
+            max={tempForInput(35, tempUnit)}
+            step={tempUnit === "f" ? 1 : 0.5}
+            suffix={tempSuffix(tempUnit)}
           />
           <SliderField
             label="Friction allowance"
-            value={settings.friction}
-            onChange={(value) => update({ friction: value })}
+            value={deltaValue(settings.friction)}
+            onChange={(value) =>
+              update({
+                friction:
+                  tempUnit === "f" ? round(fromTempDelta(value, "f") * 2, 0) / 2 : value,
+              })
+            }
             min={0}
-            max={8}
+            max={deltaValue(8)}
             step={0.5}
-            suffix="°C"
-            hint="Hand mix ≈ 2°C, stand mixer ≈ 3–5°C."
+            suffix={tempSuffix(tempUnit)}
+            hint={`Hand mix ≈ ${fmtTempDelta(2, tempUnit)} · stand mixer ≈ ${fmtTempDelta(
+              3,
+              tempUnit,
+            )}–${fmtTempDelta(5, tempUnit)}`}
           />
         </div>
       </div>
@@ -150,7 +183,7 @@ export function FdtPlanner({ roomTemp }: { roomTemp: number }) {
         <div className="mt-2.5 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
           <label className="block">
             <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-cream/35">
-              Water used (°C)
+              Water used ({tempSuffix(tempUnit)})
             </span>
             <input
               type="number"
@@ -160,14 +193,14 @@ export function FdtPlanner({ roomTemp }: { roomTemp: number }) {
                 setWaterUsed(event.target.value);
                 setMessage(null);
               }}
-              placeholder={String(water)}
+              placeholder={String(display(water))}
               aria-label="Water temperature used"
               className="mt-1 w-full rounded-xl border border-white/10 bg-black/25 px-2.5 py-2 font-mono text-[12px] text-cream outline-none placeholder:text-cream/25 focus:border-ember/60"
             />
           </label>
           <label className="block">
             <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-cream/35">
-              Measured dough (°C)
+              Measured dough ({tempSuffix(tempUnit)})
             </span>
             <input
               type="number"
@@ -177,7 +210,7 @@ export function FdtPlanner({ roomTemp }: { roomTemp: number }) {
                 setMeasured(event.target.value);
                 setMessage(null);
               }}
-              placeholder="24.5"
+              placeholder={display(24.5)}
               aria-label="Measured dough temperature"
               className="mt-1 w-full rounded-xl border border-white/10 bg-black/25 px-2.5 py-2 font-mono text-[12px] text-cream outline-none placeholder:text-cream/25 focus:border-ember/60"
             />
