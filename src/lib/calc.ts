@@ -27,7 +27,13 @@ export interface DoughMath {
   prefermentPct: number;
   totalDough: number;
   ballCount: number;
+  /** Per ball, or per pan when the batch is sized by pan. */
   ballWeight: number;
+  /** Pan area in cm², whether or not pan sizing is active. */
+  panArea: number;
+  /** Dough that fits one pan at the chosen loading. */
+  panDough: number;
+  panLoading: number;
   effectiveHours: number;
   suggestedYeastPct: number;
   suggestedStarterPct: number;
@@ -129,6 +135,11 @@ export function calculateDough(formula: Formula): DoughMath {
   const temperHours = num(formula.temperHours, 0, 24, 1);
   const ballCount = Math.max(1, Math.round(num(formula.ballCount, 1, 80, 4)));
   const ballWeightInput = num(formula.ballWeight, 40, 1200, 280);
+  const panLength = num(formula.panLength, 10, 80, 30);
+  const panWidth = num(formula.panWidth, 10, 60, 20);
+  const doughLoading = num(formula.doughLoading, 0.2, 1.6, 0.75);
+  const panArea = panLength * panWidth;
+  const panDough = panArea * doughLoading;
 
   const starterPct = formula.leavenMode === "sourdough" ? num(formula.starterPct, 0, 100, 20) : 0;
   const yeastPct =
@@ -152,10 +163,14 @@ export function calculateDough(formula: Formula): DoughMath {
     maltPct / 100 +
     yeastPct / 100;
 
+  // Three ways to anchor a batch: flour weight, finished balls, or pans whose
+  // area × loading already implies the dough weight.
   const flour =
     formula.sizing === "balls"
       ? (ballCount * ballWeightInput) / Math.max(multiplier, 0.5)
-      : num(formula.flourWeight, 10, 20000, 1000);
+      : formula.sizing === "pan"
+        ? (ballCount * panDough) / Math.max(multiplier, 0.5)
+        : num(formula.flourWeight, 10, 20000, 1000);
 
   // The second flour is a share of total flour, not an addition to it.
   const flourSecondary = (flour * num(formula.flour2Pct, 0, 95, 0)) / 100;
@@ -215,6 +230,9 @@ export function calculateDough(formula: Formula): DoughMath {
     totalDough,
     ballCount,
     ballWeight,
+    panArea,
+    panDough,
+    panLoading: doughLoading,
     effectiveHours,
     suggestedYeastPct,
     suggestedStarterPct,

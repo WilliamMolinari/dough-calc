@@ -15,11 +15,14 @@ only have to say roughly what you want and press the buttons in order.
 
 ### The 60-second version
 
-1. **Open the app** (the website, or the desktop app — they are the same app).
+1. **Open the app** (the website, or the desktop app — they are the same app). On a first visit the
+   **New here?** card asks three questions — what you're making, how many, when you mix — and fills
+   the calculator in for you.
 2. **Pick a style** under **Start from a style** — Neapolitan, New York, New Haven, Detroit… Each card
    loads a complete, sensible recipe for that kind of pizza.
-3. **Say how much you're making** with **I know my dough balls**: 4 balls at 250 g is four 12-inch
-   pizzas. Not sure? Use the table below.
+3. **Say how much you're making** with **Dough balls**: 4 balls at 250 g is four 12-inch pizzas.
+   Baking in a tray? Switch the sizing mode to **Pan size** and give the pan's length and width
+   instead. Not sure? Use the table below.
 4. **Leave hydration, salt and yeast alone** for your first bake. The preset is already balanced.
 5. **Follow the timeline** at the bottom of the calculator: mix → folds → bulk → ball and fridge →
    temper → preheat → bake. The **Weigh now** list tells you exactly what to put on the scale.
@@ -47,14 +50,15 @@ are example entries, not someone's real dinner.
 | --- | --- |
 | **Calculator** | Choose a style, set how much dough, adjust the recipe, read the weights and the timeline. |
 | **Journal** | Every bake you saved: ratings, photos, notes, comparisons, and **Insights** across them. |
-| **Plan** | Work backwards from a serve time: how much dough, when to start, oven order. |
+| **Plan** | Work backwards from a serve time: how much dough, when to start, oven order — plus a starter build with feed times and amounts. |
 | **Bake Sommelier** (round button, bottom right) | Ask questions about your bakes; optionally attach a photo of one. |
 
 ### The only controls you need at first
 
 - **g / oz** and **°C / °F** in the header switch units everywhere. Nothing is converted or lost.
-- **I know my dough balls** → number of pizzas and grams per ball. **I know my flour** → start from a
-  bag of flour instead.
+- **Sizing** has three modes. **Flour** → start from a bag of flour. **Dough balls** → number of
+  pizzas and grams per ball. **Pan size** → the pan's length and width plus **dough per pan**, which
+  is what actually sets the depth of a Detroit or focaccia bake.
 - **Hydration** = water as a percentage of the flour. 63% means 63 g water per 100 g flour. Higher is
   wetter and airier; lower is easier to handle.
 - **Salt** = 2–3% of the flour. 2.5% is the usual pizza level.
@@ -76,6 +80,11 @@ are example entries, not someone's real dinner.
 | Detroit / pan | 400–500 g per 9×13 in pan |
 
 Rough guide: 2–3 pizzas per adult for a full meal, 1–2 as a starter.
+
+For a pan, the useful number is **dough per square centimetre** rather than per ball: roughly
+0.6 g/cm² for a thin, crisp Roman tray, 0.75–0.9 g/cm² for Detroit depth, and 1.0 g/cm² and up for
+focaccia. The calculator multiplies by the pan area, so a 25 × 20 cm pan at 0.9 g/cm² asks for a
+450 g dough without you doing the arithmetic.
 
 ### Words the app uses
 
@@ -315,9 +324,25 @@ See [Optional AI configuration](#optional-ai-configuration) for the cost and key
 - **Print or share a recipe:** in the calculator, use **Print** for a recipe card, **PNG** for an image,
   **Copy** for text, or **Share** for a link that restores the exact formula.
 - **Take it into the kitchen:** **Kitchen mode** shows one large step at a time with timers and alarms;
-  the calendar button exports the whole schedule with reminders.
+  the calendar button exports the whole schedule with reminders. The **A+** button enlarges the text
+  for reading across the counter, and checked steps survive a reload mid-bake.
+- **Be honest about alarms:** browser alarms only ring while the tab is open. **Alarm** on a running
+  timer downloads a calendar event the phone itself will fire, even with the screen locked.
 - **Keep a backup:** Journal → **Backup** saves one JSON file with every bake and photo. Restore it on
-  another computer or after clearing browser data.
+  another computer or after clearing browser data. The same panel lists **restore points** the app
+  keeps automatically (the last few journal states), so a wrong delete or a bad restore is undoable.
+- **Get the journal into a spreadsheet:** Journal → **CSV** writes one row per bake with formula,
+  ratings, tags and notes — handy for asking whether 70% hydration really did score better.
+- **Clean up old photos (desktop):** the photo folder card can list images no bake points at any more
+  and move them to the Trash. Nothing a bake still uses is ever touched.
+- **Build a starter:** Plan → **Build the starter** works backwards from the grams your dough needs to
+  feed amounts, feed times and what to keep for next time.
+- **Reset the recipe:** **Reset to defaults** at the top of the calculator puts every ratio, leavening
+  dose and timing back to the app defaults. The journal is untouched, and the toast offers an Undo.
+- **Start over completely:** Journal → **Backup** → **Clear all data** deletes every bake and photo,
+  all restore points, the current formula, units, timers, the dinner plan and the saved Gemini key
+  from this browser. It asks for a second tap, and it cannot be undone — export a backup first if
+  you might want any of it.
 - **Move photos into a folder (desktop):** in the Journal you can choose a folder; photos are written
   there as normal image files you can open in Finder or Explorer.
 - **Ask the AI:** add a Gemini key in the sommelier's **AI settings**, then ask about a bake or attach a
@@ -334,4 +359,10 @@ See [Optional AI configuration](#optional-ai-configuration) for the cost and key
 - **`electron-builder` fails on macOS with a signing error** — the config intentionally has no
   identity; remove any `CSC_*` environment variables you may have set.
 - **Journal disappeared after clearing site data** — browser storage was cleared. Export a backup
-  regularly from the journal; it restores formulas, bakes and photos.
+  regularly from the journal; it restores formulas, bakes and photos. If the data was lost on this
+  device without clearing anything, open Journal → **Backup** and check the restore points first.
+- **“Browser storage is full”** — the browser refused a write. Export a backup, then remove photos
+  from older bakes (or run the photo-folder cleanup in the desktop app) and try again. The journal
+  stays in the backup mirror until the database accepts writes again.
+- **A pan recipe comes out too shallow or too deep** — change **dough per pan** rather than the
+  hydration. Depth is the number that pan baking is actually sensitive to.

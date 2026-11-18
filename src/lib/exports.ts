@@ -32,7 +32,9 @@ export function buildRecipeText(
 
   return [
     `DOUGHLAB — ${(title ?? "Custom formula").toUpperCase()}`,
-    `${math.ballCount} × ${fmtWeight(math.ballWeight, unit)} · ${formula.hydration}% hydration`,
+    formula.sizing === "pan"
+      ? `${math.ballCount} × ${formula.panLength}×${formula.panWidth} cm pan (${fmtWeight(math.ballWeight, unit)} each) · ${formula.hydration}% hydration`
+      : `${math.ballCount} × ${fmtWeight(math.ballWeight, unit)} · ${formula.hydration}% hydration`,
     "",
     "WEIGH",
     ...weigh,
@@ -117,6 +119,148 @@ export function downloadScheduleIcs(
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Journal spreadsheet export                                          */
+/* ------------------------------------------------------------------ */
+
+const LEAVEN_CSV: Record<BakeEntry["formula"]["leavenMode"], string> = {
+  sourdough: "Sourdough starter",
+  yeast: "Commercial yeast",
+  preferment: "Pre-ferment",
+};
+
+const SWEETENER_CSV: Record<BakeEntry["formula"]["sweetener"], string> = {
+  none: "",
+  sugar: "Sugar",
+  honey: "Honey",
+  malt: "Malt extract",
+};
+
+/** RFC 4180: quote a cell only when it could otherwise break the row. */
+export function csvCell(value: string | number | undefined | null): string {
+  if (value === undefined || value === null) return "";
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/** One row per bake, so a spreadsheet can answer "was 70% actually better?". */
+export function journalCsv(bakes: BakeEntry[]): string {
+  const header = [
+    "Date",
+    "Name",
+    "Style",
+    "Hydration %",
+    "Salt %",
+    "Oil %",
+    "Sweetener",
+    "Sweetener %",
+    "Leaven",
+    "Leaven %",
+    "Balls or pans",
+    "Weight each (g)",
+    "Total dough (g)",
+    "Bulk (h)",
+    "Cold retard (h)",
+    "Temper (h)",
+    "Room (C)",
+    "Fridge (C)",
+    "Oven",
+    "Overall",
+    "Crust",
+    "Crumb",
+    "Extensibility",
+    "Flavour",
+    "Tags",
+    "Flour",
+    "Notes",
+    "Next time",
+  ];
+
+  const rows = bakes.map((bake) => {
+    const f = bake.formula;
+    const math = calculateDough(f);
+    return [
+      bake.createdAt.slice(0, 10),
+      bake.name,
+      bake.styleName,
+      f.hydration,
+      f.salt,
+      f.oil,
+      SWEETENER_CSV[f.sweetener],
+      f.sweetener === "none" ? "" : f.sweetenerPct,
+      LEAVEN_CSV[f.leavenMode],
+      f.leavenMode === "sourdough" ? f.starterPct : f.yeastPct,
+      math.ballCount,
+      Math.round(math.ballWeight),
+      Math.round(math.totalDough),
+      f.bulkHours,
+      f.retardHours,
+      f.temperHours,
+      f.roomTemp,
+      f.fridgeTemp,
+      bake.oven,
+      bake.ratings.overall || "",
+      bake.ratings.crust || "",
+      bake.ratings.crumb || "",
+      bake.ratings.extensibility || "",
+      bake.ratings.flavor || "",
+      bake.tags.join(" "),
+      bake.flourBrand,
+      bake.notes,
+      bake.nextTimeNotes,
+    ]
+      .map(csvCell)
+      .join(",");
+  });
+
+  // The BOM keeps Excel from mangling accented names and degree signs.
+  return `\uFEFF${[header.join(","), ...rows].join("\r\n")}`;
+}
+
+export function downloadJournalCsv(bakes: BakeEntry[]): void {
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadBlob(
+    new Blob([journalCsv(bakes)], { type: "text/csv;charset=utf-8" }),
+    `doughlab-journal-${stamp}.csv`,
+  );
+}
+
+/**
+ * One event with an alarm at the timer's end time. Calendar apps fire this
+ * even when the DoughLab tab is asleep, which a page timer cannot promise.
+ */
+export function downloadTimerIcs(label: string, endsAt: number, title = "DoughLab timer"): void {
+  const end = new Date(endsAt);
+  if (Number.isNaN(end.getTime())) return;
+  const start = new Date(end.getTime() - 60_000);
+  const stamp = icsStamp(new Date());
+  const body = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//DoughLab//Timer//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${icsStamp(end)}-${slugify(label)}@doughlab.local`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${icsStamp(start)}`,
+    `DTEND:${icsStamp(end)}`,
+    `SUMMARY:${icsText(`${title} — ${label}`)}`,
+    `DESCRIPTION:${icsText("Set in DoughLab kitchen mode.")}`,
+    "BEGIN:VALARM",
+    "TRIGGER:PT0M",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${icsText(label)}`,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  downloadBlob(
+    new Blob([body], { type: "text/calendar;charset=utf-8" }),
+    `${slugify(label)}-alarm.ics`,
+  );
+}
+
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -171,6 +315,14 @@ export function recipeJson(formula: Formula, unit: Unit, name: string) {
       ballWeight: Math.round(math.ballWeight),
       ballCount: math.ballCount,
       effectiveFermentHours: math.effectiveHours,
+      pan:
+        formula.sizing === "pan"
+          ? {
+              lengthCm: formula.panLength,
+              widthCm: formula.panWidth,
+              loadingGramsPerCm2: formula.doughLoading,
+            }
+          : undefined,
     },
   };
 }

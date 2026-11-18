@@ -81,6 +81,9 @@ export const STORAGE_KEYS = {
   lastBackup: "doughlab.lastBackup.v1",
   plan: "doughlab.plan.v1",
   kitchenTimer: "doughlab.kitchenTimer.v1",
+  kitchenChecks: "doughlab.kitchenChecks.v1",
+  kitchenLargeText: "doughlab.kitchenLargeText.v1",
+  onboarded: "doughlab.onboarded.v1",
 } as const;
 
 export function readStored<T>(key: string, fallback: T): T {

@@ -13,4 +13,6 @@ contextBridge.exposeInMainWorld("doughlabDesktop", {
   revealPhotoFolder: () => ipcRenderer.invoke("photos:reveal"),
   savePhoto: (dataUrl) => ipcRenderer.invoke("photos:save", { dataUrl }),
   readPhoto: (ref) => ipcRenderer.invoke("photos:read", ref),
+  listPhotos: () => ipcRenderer.invoke("photos:list"),
+  trashPhotos: (names) => ipcRenderer.invoke("photos:trash", names),
 });

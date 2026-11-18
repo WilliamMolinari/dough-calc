@@ -15,6 +15,10 @@ export interface DesktopBridge {
   /** Writes a resized data URL into the photo folder. */
   savePhoto: (dataUrl: string) => Promise<{ ref: string; name: string }>;
   readPhoto: (ref: string) => Promise<{ dataUrl: string } | null>;
+  /** Every DoughLab photo file in the folder, with sizes. */
+  listPhotos: () => Promise<Array<{ name: string; size: number; modifiedAt?: number }>>;
+  /** Moves named files to the OS Trash; never an unreferenced path. */
+  trashPhotos: (names: string[]) => Promise<{ trashed: number; failed: number }>;
 }
 
 declare global {

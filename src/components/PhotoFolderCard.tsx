@@ -1,26 +1,47 @@
 import { useEffect, useState } from "react";
-import { FolderOpen, Images, Loader2, MoveRight, Sparkles } from "lucide-react";
+import {
+  FolderOpen,
+  Images,
+  Loader2,
+  MoveRight,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { desktopBridge, type PhotoFolderInfo } from "../lib/desktop";
+import {
+  referencedPhotoNames,
+  unusedPhotos,
+  type PhotoFileInfo,
+  type UnusedPhotos,
+} from "../lib/photoHygiene";
+import { formatBytes } from "../lib/backup";
 import { ActionButton, cx } from "./ui";
 
 /**
- * Desktop-only: where bake photos live on disk. Renders nothing in the browser
- * build, where photos stay in IndexedDB.
+ * Desktop-only: where bake photos live on disk, and what is no longer used by
+ * any bake. Renders nothing in the browser build, where photos stay in
+ * IndexedDB and are deleted along with the journal.
  */
 export function PhotoFolderCard({
   totalPhotos,
   inlinePhotos,
+  photoRefs = [],
   onMovePhotos,
 }: {
   totalPhotos: number;
   /** Photos still embedded in the journal and not yet on disk. */
   inlinePhotos: number;
+  /** Every `file:` reference the journal still points at. */
+  photoRefs?: string[];
   onMovePhotos: () => Promise<number>;
 }) {
   const bridge = desktopBridge();
   const [folder, setFolder] = useState<PhotoFolderInfo | null>(null);
   const [choosing, setChoosing] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [trashing, setTrashing] = useState(false);
+  const [unused, setUnused] = useState<UnusedPhotos | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +65,7 @@ export function PhotoFolderCard({
   const chooseFolder = async () => {
     setChoosing(true);
     setMessage(null);
+    setUnused(null);
     try {
       const next = await bridge.choosePhotoFolder();
       if (next) {
@@ -75,6 +97,39 @@ export function PhotoFolderCard({
       setMessage("Could not move those photos. They are still in the journal.");
     } finally {
       setMoving(false);
+    }
+  };
+
+  const scan = async () => {
+    setScanning(true);
+    setMessage(null);
+    try {
+      const files: PhotoFileInfo[] = await bridge.listPhotos();
+      setUnused(unusedPhotos(files, referencedPhotoNames(photoRefs)));
+    } catch {
+      setMessage("Could not read the photo folder.");
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const trash = async () => {
+    if (!unused) return;
+    setTrashing(true);
+    try {
+      const names = unused.files.map((file) => file.name);
+      const result = await bridge.trashPhotos(names);
+      setMessage(
+        result.failed
+          ? `Moved ${result.trashed} to the Trash; ${result.failed} could not be moved.`
+          : `Moved ${result.trashed} unused photo${result.trashed === 1 ? "" : "s"} to the Trash.`,
+      );
+      setUnused(null);
+      await scan();
+    } catch {
+      setMessage("Could not move those files. Nothing was deleted.");
+    } finally {
+      setTrashing(false);
     }
   };
 
@@ -126,7 +181,52 @@ export function PhotoFolderCard({
             {moving ? "Moving…" : `Move ${inlinePhotos} into folder`}
           </ActionButton>
         )}
+        <ActionButton
+          onClick={() => void scan()}
+          icon={scanning ? Loader2 : Trash2}
+          className="px-2.5 py-1.5 text-[11px]"
+          disabled={scanning || trashing}
+        >
+          {scanning ? "Checking…" : "Check for unused photos"}
+        </ActionButton>
       </div>
+
+      {unused && (
+        <div className="mt-2 rounded-xl border border-white/10 bg-black/25 px-2.5 py-2">
+          {unused.count === 0 ? (
+            <p className="text-[10.5px] text-cream/40">
+              Everything in the folder still belongs to a bake. Nothing to clean up.
+            </p>
+          ) : (
+            <>
+              <p className="text-[10.5px] leading-relaxed text-cream/55">
+                {unused.count} photo{unused.count === 1 ? "" : "s"} ({formatBytes(unused.bytes)})
+                belong{unused.count === 1 ? "s" : ""} to no bake — usually the photos of a deleted
+                bake. Moving them to the Trash frees the space; nothing still in the journal is
+                touched.
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <ActionButton
+                  variant="danger"
+                  onClick={() => void trash()}
+                  icon={trashing ? Loader2 : Trash2}
+                  className="px-2.5 py-1.5 text-[11px]"
+                  disabled={trashing}
+                >
+                  {trashing ? "Moving…" : `Move ${unused.count} to Trash`}
+                </ActionButton>
+                <ActionButton
+                  onClick={() => setUnused(null)}
+                  className="px-2.5 py-1.5 text-[11px]"
+                  disabled={trashing}
+                >
+                  Keep them
+                </ActionButton>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {message && (
         <p

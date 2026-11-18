@@ -183,7 +183,10 @@ export function RecipeOutput({
             <span className="font-mono text-[13px] text-cream/35">{unit}</span>
           </div>
           <p className="mt-1.5 text-[11.5px] text-cream/45">
-            {math.ballCount} × {fmtWeight(math.ballWeight, unit)} · {formula.hydration}% hydration
+            {formula.sizing === "pan"
+              ? `${math.ballCount} × ${formula.panLength}×${formula.panWidth} cm pan · ${fmtWeight(math.ballWeight, unit)} each`
+              : `${math.ballCount} × ${fmtWeight(math.ballWeight, unit)}`}{" "}
+            · {formula.hydration}% hydration
             {blend ? ` · ${blend}` : ""}
           </p>
         </div>

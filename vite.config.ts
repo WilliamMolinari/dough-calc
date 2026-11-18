@@ -12,4 +12,9 @@ export default defineConfig({
     port: 3000,
     strictPort: false,
   },
+  // Only scan the app's own entry. Stale build output in the project root
+  // (dist/, freebuff-sites-build/) otherwise makes the dependency scan fail.
+  optimizeDeps: {
+    entries: ["index.html"],
+  },
 });

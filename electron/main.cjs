@@ -12,6 +12,7 @@ const path = require("node:path");
 const {
   carryPhotoFiles,
   fileNameFromRef,
+  isOwnPhotoName,
   readPhotoAsDataUrl,
   savePhotoDataUrl,
 } = require("./photoFolder.cjs");
@@ -124,6 +125,49 @@ function registerIpc() {
   ipcMain.handle("photos:read", async (_event, ref) => {
     const dataUrl = await readPhotoAsDataUrl(photoFolder, ref);
     return dataUrl ? { dataUrl } : null;
+  });
+
+  // Only this app's own files, so a cleanup can never touch anything the baker
+  // put in the folder themselves.
+  ipcMain.handle("photos:list", async () => {
+    const files = [];
+    try {
+      await fs.promises.mkdir(photoFolder, { recursive: true });
+      const names = await fs.promises.readdir(photoFolder);
+      for (const name of names) {
+        if (!isOwnPhotoName(name)) continue;
+        try {
+          const stat = await fs.promises.stat(path.join(photoFolder, name));
+          if (stat.isFile()) {
+            files.push({ name, size: stat.size, modifiedAt: stat.mtimeMs });
+          }
+        } catch {
+          /* a vanished file is not an error */
+        }
+      }
+    } catch {
+      /* an unreadable folder just reports nothing */
+    }
+    return files;
+  });
+
+  ipcMain.handle("photos:trash", async (_event, names) => {
+    const requested = Array.isArray(names) ? names : [];
+    let trashed = 0;
+    let failed = 0;
+    for (const name of requested) {
+      if (!isOwnPhotoName(name)) {
+        failed += 1;
+        continue;
+      }
+      try {
+        await shell.trashItem(path.join(photoFolder, name));
+        trashed += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    return { trashed, failed };
   });
 }
 

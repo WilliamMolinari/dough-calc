@@ -11,10 +11,11 @@ import {
   Play,
   RotateCcw,
   Timer,
+  ZoomIn,
   X,
 } from "lucide-react";
 import { buildSchedule } from "../lib/calc";
-import { downloadScheduleIcs } from "../lib/exports";
+import { downloadScheduleIcs, downloadTimerIcs } from "../lib/exports";
 import { fmtClock, fmtDay } from "../lib/format";
 import { STORAGE_KEYS, readStored, writeStored } from "../lib/storage";
 import { MAX_TIMER_MINUTES, clampTimerMinutes, formatCountdown, minutesUntil } from "../lib/timer";
@@ -74,10 +75,23 @@ export function KitchenMode({
     () => buildSchedule(formula, startAt ? new Date(startAt) : undefined, tempUnit),
     [formula, startAt, tempUnit],
   );
+  // A reload mid-bake must not forget which steps are already done. The key
+  // ties the checklist to this schedule, so opening another bake starts clean.
+  const checklistKey = `${title}|${startAt ?? ""}|${steps[0]?.at.getTime() ?? ""}`;
   const [checked, setChecked] = useState<Set<string>>(() => {
     const initial = new Date();
-    return new Set(steps.filter((step) => step.at < initial).map((step) => step.key));
+    const inThePast = new Set(steps.filter((step) => step.at < initial).map((step) => step.key));
+    const saved = readStored<{ key?: string; checked?: unknown } | null>(
+      STORAGE_KEYS.kitchenChecks,
+      null,
+    );
+    if (!saved || saved.key !== checklistKey || !Array.isArray(saved.checked)) return inThePast;
+    const valid = new Set(steps.map((step) => step.key));
+    return new Set(saved.checked.filter((key): key is string => typeof key === "string" && valid.has(key)));
   });
+  const [largeText, setLargeText] = useState(
+    () => readStored<unknown>(STORAGE_KEYS.kitchenLargeText, false) === true,
+  );
   const [now, setNow] = useState(() => new Date());
   const [tickNow, setTickNow] = useState(() => Date.now());
   const [timers, setTimers] = useState<StepTimer[]>([]);
@@ -125,6 +139,14 @@ export function KitchenMode({
     if (!timerRestored) return;
     writeStored(STORAGE_KEYS.kitchenTimer, timers);
   }, [timers, timerRestored]);
+
+  useEffect(() => {
+    writeStored(STORAGE_KEYS.kitchenChecks, { key: checklistKey, checked: [...checked] });
+  }, [checked, checklistKey]);
+
+  useEffect(() => {
+    writeStored(STORAGE_KEYS.kitchenLargeText, largeText);
+  }, [largeText]);
 
   useDialogLayer({
     active: true,
@@ -384,6 +406,21 @@ export function KitchenMode({
             </button>
           )}
           <button
+            type="button"
+            onClick={() => setLargeText((value) => !value)}
+            aria-pressed={largeText}
+            aria-label={largeText ? "Use normal text size" : "Use larger kitchen text"}
+            title={largeText ? "Normal text size" : "Larger text for reading across the counter"}
+            className={cx(
+              "grid size-10 shrink-0 place-items-center rounded-full border transition-colors",
+              largeText
+                ? "border-ember/35 bg-ember/12 text-ember-2"
+                : "border-white/12 bg-white/[0.05] text-cream/45 hover:text-cream",
+            )}
+          >
+            <ZoomIn size={16} />
+          </button>
+          <button
             ref={closeRef}
             type="button"
             onClick={onClose}
@@ -406,7 +443,10 @@ export function KitchenMode({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6"
+        style={largeText ? { zoom: 1.15 } : undefined}
+      >
         <div className="mx-auto max-w-3xl space-y-4">
           <div className="rounded-3xl border border-ember/25 bg-gradient-to-br from-ember/[0.14] to-transparent p-4 sm:p-5">
             <p className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-ember/80">
@@ -517,6 +557,17 @@ export function KitchenMode({
                     >
                       Cancel
                     </button>
+                    {timer.endsAt && (
+                      <button
+                        type="button"
+                        onClick={() => downloadTimerIcs(timer.label, timer.endsAt!, title)}
+                        aria-label="Add this timer to your calendar as an alarm"
+                        title="A phone alarm that still fires with the screen locked"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-2 text-[12px] text-cream/70 transition-colors hover:text-cream"
+                      >
+                        <CalendarPlus size={13} /> Alarm
+                      </button>
+                    )}
                   </>
                 )}
                 {[1, 5, 10, 30].map((minutes) => (
@@ -568,6 +619,12 @@ export function KitchenMode({
                   Start
                 </button>
               </div>
+
+            <p className="mt-2.5 border-t border-white/8 pt-2.5 text-[10.5px] leading-relaxed text-cream/35">
+              {notifyState === "granted"
+                ? "Browser alarms work while this tab is open, even in the background. A locked phone or a closed tab cannot run them — use Alarm for a timer the phone itself will fire."
+                : "This screen has to stay awake to ring. Turn on browser alarms above, or use Alarm to put a timer in your calendar that survives a locked phone."}
+            </p>
 
             {otherTimers.length > 0 && (
               <div className="mt-3 space-y-1.5 border-t border-white/8 pt-3">

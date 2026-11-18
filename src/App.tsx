@@ -21,7 +21,8 @@ import { bakeReadyAt, calculateDough, yeastForType } from "./lib/calc";
 import { fmtClock, fmtDay, fmtWeight, round } from "./lib/format";
 import { getOvenProfile } from "./lib/ovens";
 import { convertTempText, fmtTemp } from "./lib/temperature";
-import { getStyle, type StylePreset } from "./lib/presets";
+import { DEFAULT_FORMULA, getStyle, type StylePreset } from "./lib/presets";
+import { clearAllData } from "./lib/reset";
 import { readShareFromLocation } from "./lib/share";
 import {
   STORAGE_BUDGET_BYTES,
@@ -33,10 +34,15 @@ import {
   loadUnit,
   measureStoredBytes,
   readStored,
-  stripBakePhotos,
   writeStored,
 } from "./lib/storage";
-import { journalDbSupported, loadJournalFromDb, saveJournalToDb } from "./lib/journalDb";
+import {
+  journalDbSupported,
+  listSnapshots,
+  loadSnapshot,
+  type SnapshotMeta,
+} from "./lib/journalDb";
+import { hydrateJournal, maybeSnapshot, persistJournal, takeSnapshot } from "./lib/journalStore";
 import { materializePhotos } from "./lib/photoFiles";
 import { deleteBakeEntry, duplicateBakeEntry, nextTrialName, rootIdOf } from "./lib/journal";
 import { adjustFormula, trialChangeLabel, type TrialVariable } from "./lib/experiments";
@@ -62,6 +68,8 @@ import { RecipeCardModal } from "./components/RecipeCardModal";
 import { BakeChatbot } from "./components/BakeChatbot";
 import { FdtPlanner } from "./components/FdtPlanner";
 import { DinnerPlanner } from "./components/DinnerPlanner";
+import { StarterPlanner } from "./components/StarterPlanner";
+import { FirstRun } from "./components/FirstRun";
 import { BackupModal } from "./components/BackupModal";
 import { KitchenMode } from "./components/KitchenMode";
 import { Badge, Card, cx } from "./components/ui";
@@ -205,7 +213,11 @@ function Hero({
                 <HeroStat
                   label="Batch"
                   value={fmtWeight(totalDough, unit)}
-                  sub={`${formula.ballCount} balls`}
+                  sub={
+                    formula.sizing === "pan"
+                      ? `${formula.ballCount} × ${formula.panLength}×${formula.panWidth} cm pan`
+                      : `${formula.ballCount} balls`
+                  }
                   icon={Scale}
                 />
                 <HeroStat
@@ -354,9 +366,18 @@ export default function App() {
   const [editingBakeId, setEditingBakeId] = useState<string | null>(null);
   const [designBakeId, setDesignBakeId] = useState<string | null>(null);
   const [remoteUpdate, setRemoteUpdate] = useState(false);
+  const [snapshots, setSnapshots] = useState<SnapshotMeta[]>([]);
+  const [onboarded, setOnboarded] = useState(() => readStored<unknown>(STORAGE_KEYS.onboarded, false) === true);
   const nudgedBackup = useRef(false);
   const journalWrites = useRef<Promise<void>>(Promise.resolve());
   const journalWriteError = useRef(false);
+  const quotaWarned = useRef(false);
+  const lastPersistedCount = useRef(0);
+  // Hydration writes the journal back unchanged; that is not a restore point.
+  const skipNextSnapshot = useRef(true);
+  // Set while "Clear all data" runs, so a queued write cannot put the old
+  // journal back after the wipe.
+  const wiping = useRef(false);
   // Set by "Bake this again": the next saved bake becomes a trial of that bake.
   const [pendingTrialFrom, setPendingTrialFrom] = useState<string | null>(null);
   const [kitchen, setKitchen] = useState<{
@@ -475,73 +496,75 @@ export default function App() {
     });
   }, [bakes.length, pushToast]);
 
-  // Load the full journal (photos included) from IndexedDB. On the first run
-  // after this change, migrate the localStorage copy into the database. Until
-  // this finishes, the persistence effect stays paused so it cannot overwrite
-  // the database with the photo-less mirror.
+  // Load the full journal (photos included) from IndexedDB, migrating the
+  // localStorage copy on the first run after an upgrade. Until this finishes,
+  // the persistence effect stays paused so it cannot overwrite the database
+  // with the photo-less mirror.
   useEffect(() => {
     let cancelled = false;
 
     const hydrate = async () => {
-      const local = loadBakes();
-      if (!journalDbSupported()) {
-        if (!cancelled) {
-          setJournalDb(false);
-          setJournalReady(true);
-          setStorageInfo(await estimateStorage());
-        }
-        return;
-      }
-
-      const loaded = await loadJournalFromDb();
+      const result = await hydrateJournal();
       if (cancelled) return;
-
-      if (!loaded.ok) {
-        setJournalDb(false);
-      } else if (loaded.bakes !== null) {
-        setBakes(loaded.bakes);
-      } else if (local.length) {
-        const migrated = await saveJournalToDb(local);
-        if (cancelled) return;
-        if (!migrated) setJournalDb(false);
-      }
-
-      if (cancelled) return;
+      setJournalDb(result.dbAvailable);
+      setBakes(result.bakes);
+      lastPersistedCount.current = result.bakes.length;
       setJournalReady(true);
       setStorageInfo(await estimateStorage());
+      if (result.reason === "quota") {
+        pushToast("Browser storage is full, so the journal is being read from the backup mirror.", "error");
+      }
     };
 
     void hydrate();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pushToast]);
 
   useEffect(() => {
     if (!journalReady) return;
     let disposed = false;
-    const snapshot = bakes;
+    const batch = bakes;
+    const previousCount = lastPersistedCount.current;
 
     const persist = async () => {
-      let inDatabase = false;
-      if (journalDb) inDatabase = await saveJournalToDb(snapshot);
+      if (wiping.current) return;
+      const result = await persistJournal(batch);
 
-      // Only drop photo bytes from the localStorage mirror after IndexedDB has
-      // accepted them. If the database write failed, keep the whole journal in
-      // localStorage as the fallback it has always been.
-      const result = writeStored(
-        STORAGE_KEYS.bakes,
-        inDatabase ? stripBakePhotos(snapshot) : snapshot,
-      );
-      if (!result.ok && !disposed) {
-        pushToast(result.error ?? "Could not save to browser storage.", "error");
+      if (!result.mirrorOk && !disposed) {
+        pushToast(result.mirrorError ?? "Could not save to browser storage.", "error");
       }
-      if (journalDb && !inDatabase && !journalWriteError.current && !disposed) {
+      if (
+        journalDb &&
+        !result.dbSaved &&
+        result.reason !== "quota" &&
+        !journalWriteError.current &&
+        !disposed
+      ) {
         journalWriteError.current = true;
         pushToast(
           "Photos couldn't move into the browser database. The journal was saved in localStorage instead.",
           "error",
         );
+      }
+      if (result.quota && !quotaWarned.current && !disposed) {
+        quotaWarned.current = true;
+        pushToast("Browser storage is full — the newest change could not be saved.", "error", {
+          label: "Back up",
+          run: () => setBackupOpen(true),
+        });
+      }
+      if (result.dbSaved) {
+        lastPersistedCount.current = batch.length;
+        if (skipNextSnapshot.current) {
+          skipNextSnapshot.current = false;
+        } else {
+          const snapshot = await maybeSnapshot(batch, previousCount);
+          if (snapshot && !disposed) {
+            setSnapshots((prev) => [snapshot, ...prev].slice(0, 5));
+          }
+        }
       }
       if (!disposed) setStorageInfo(await estimateStorage());
     };
@@ -551,6 +574,18 @@ export default function App() {
       disposed = true;
     };
   }, [bakes, journalReady, journalDb, pushToast]);
+
+  // Restore points are only read when the backup panel is opened.
+  useEffect(() => {
+    if (!backupOpen) return;
+    let cancelled = false;
+    void listSnapshots().then((list) => {
+      if (!cancelled) setSnapshots(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [backupOpen]);
 
   const changeTab = (next: Tab) => {
     setTab(next);
@@ -773,6 +808,9 @@ export default function App() {
   const deleteBake = (id: string) => {
     const index = bakes.findIndex((bake) => bake.id === id);
     if (index < 0) return;
+    // A restore point of the journal *before* the delete, so the bake can come
+    // back even after the Undo toast has gone.
+    void takeSnapshot(bakes);
     const removed = bakes[index];
     // Snapshot the children so Undo can reattach them, not just restore the parent.
     const children = bakes.filter((bake) => bake.parentId === id);
@@ -798,12 +836,93 @@ export default function App() {
   };
 
   const restoreBackup = (restored: BakeEntry[], restoredFormula?: Formula, restoredUnit?: Unit) => {
+    // Keep a restore point of the journal this replaces, so a wrong file is
+    // always one tap away from being undone.
+    if (bakes.length) void takeSnapshot(bakes);
     // A pending Undo belongs to the journal that was just replaced.
     setToasts([]);
     setBakes(restored);
     if (restoredFormula) setFormula(restoredFormula);
     if (restoredUnit) setUnit(restoredUnit);
     setPendingTrialFrom(null);
+  };
+
+  /** Puts every ratio and setting back to the app defaults, journal untouched. */
+  const resetFormula = () => {
+    const previous = { ...formula };
+    setFormula({ ...DEFAULT_FORMULA });
+    pushToast("Recipe reset to the app defaults", "info", {
+      label: "Undo",
+      run: () => setFormula(previous),
+    });
+  };
+
+  /** Deletes the journal, photos, restore points and every preference. */
+  const wipeAllData = async () => {
+    wiping.current = true;
+    const result = await clearAllData();
+
+    setToasts([]);
+    setBakes([]);
+    setFormula({ ...DEFAULT_FORMULA });
+    setUnit("g");
+    setTempUnit("c");
+    setSnapshots([]);
+    setActiveBakeId(null);
+    setEditingBakeId(null);
+    setDesignBakeId(null);
+    setPendingTrialFrom(null);
+    setSaveOpen(false);
+    setKitchen(null);
+    setOnboarded(false);
+    lastPersistedCount.current = 0;
+    skipNextSnapshot.current = true;
+    journalWriteError.current = false;
+    quotaWarned.current = false;
+    nudgedBackup.current = false;
+    setStorageInfo(await estimateStorage());
+    wiping.current = false;
+    setBackupOpen(false);
+
+    pushToast(
+      result.database
+        ? "All data cleared — this browser starts fresh"
+        : "Preferences were cleared, but the browser database refused to empty",
+      result.database ? "success" : "error",
+    );
+  };
+
+  const createSnapshot = async () => {
+    if (!bakes.length) {
+      pushToast("Log a bake first — there is nothing to snapshot yet", "info");
+      return;
+    }
+    const snapshot = await takeSnapshot(bakes, "manual");
+    setSnapshots(await listSnapshots());
+    pushToast(
+      snapshot ? "Restore point saved on this device" : "Could not save a restore point",
+      snapshot ? "success" : "error",
+    );
+  };
+
+  const restoreSnapshot = async (id: string) => {
+    const restored = await loadSnapshot(id);
+    if (!restored || restored.length === 0) {
+      pushToast("That restore point could not be read", "error");
+      return;
+    }
+    restoreBackup(restored);
+    setSnapshots(await listSnapshots());
+    pushToast(
+      `Journal restored from a ${restored.length}-bake restore point`,
+      "success",
+      { label: "Undo", run: () => setBackupOpen(true) },
+    );
+  };
+
+  const finishOnboarding = () => {
+    setOnboarded(true);
+    writeStored(STORAGE_KEYS.onboarded, true);
   };
 
   const activeBake = bakes.find((bake) => bake.id === activeBakeId) ?? null;
@@ -966,6 +1085,17 @@ export default function App() {
           {tab === "calculator" ? (
             <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_396px] xl:grid-cols-[minmax(0,1fr)_424px] xl:gap-5">
               <div className="min-w-0 space-y-4">
+                {!onboarded && bakes.length === 0 && (
+                  <FirstRun
+                    onApply={(patch) => updateFormula(patch)}
+                    onStart={() => {
+                      finishOnboarding();
+                      changeTab("calculator");
+                    }}
+                    onSkip={finishOnboarding}
+                  />
+                )}
+
                 <Card className="min-w-0 p-4 sm:p-5">
                   <PresetSelector activeId={effectiveFormula.styleId} onSelect={selectPreset} />
                 </Card>
@@ -975,6 +1105,7 @@ export default function App() {
                   math={math}
                   unit={unit}
                   onChange={updateFormula}
+                  onReset={resetFormula}
                 />
 
                 <FdtPlanner roomTemp={effectiveFormula.roomTemp} />
@@ -1021,14 +1152,17 @@ export default function App() {
               onMovePhotos={movePhotosToFolder}
             />
           ) : (
-            <DinnerPlanner
-              formula={effectiveFormula}
-              unit={unit}
-              onFormulaChange={updateFormula}
-              onKitchen={(scaled, startAt) =>
-                setKitchen({ formula: scaled, title: "Dinner service", startAt })
-              }
-            />
+            <div className="space-y-4">
+              <DinnerPlanner
+                formula={effectiveFormula}
+                unit={unit}
+                onFormulaChange={updateFormula}
+                onKitchen={(scaled, startAt) =>
+                  setKitchen({ formula: scaled, title: "Dinner service", startAt })
+                }
+              />
+              <StarterPlanner formula={effectiveFormula} math={math} unit={unit} onToast={pushToast} />
+            </div>
           )}
         </main>
 
@@ -1121,7 +1255,11 @@ export default function App() {
         bakes={bakes}
         formula={formula}
         unit={unit}
+        snapshots={snapshots}
         onRestore={restoreBackup}
+        onRestoreSnapshot={restoreSnapshot}
+        onSnapshotNow={createSnapshot}
+        onClearAll={wipeAllData}
         onToast={pushToast}
       />
 

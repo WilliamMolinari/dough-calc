@@ -1,7 +1,7 @@
 export type Unit = "g" | "oz";
 export type TempUnit = "c" | "f";
 
-export type SizingMode = "flour" | "balls";
+export type SizingMode = "flour" | "balls" | "pan";
 export type LeavenMode = "sourdough" | "yeast" | "preferment";
 export type YeastType = "idy" | "ady" | "fresh";
 export type PrefermentKind = "poolish" | "biga";
@@ -21,8 +21,14 @@ export interface Formula {
   /** Name used when flour2Type is "custom". */
   flour2Name: string;
   ballCount: number;
-  /** Grams per dough ball. */
+  /** Grams per dough ball, or pans when sizing === "pan". */
   ballWeight: number;
+
+  /** Pan sizing, in centimetres. Used when sizing === "pan". */
+  panLength: number;
+  panWidth: number;
+  /** Dough per square centimetre of pan — what actually sets a pan bake's depth. */
+  doughLoading: number;
 
   /** Baker's percentages, all relative to total flour. */
   hydration: number;

@@ -4,6 +4,7 @@ import {
   BookmarkPlus,
   Camera,
   DatabaseBackup,
+  FileSpreadsheet,
   HardDrive,
   ImageOff,
   Pizza,
@@ -14,6 +15,7 @@ import {
   Wheat,
 } from "lucide-react";
 import { formatBytes } from "../lib/backup";
+import { downloadJournalCsv } from "../lib/exports";
 import { isDesktopApp } from "../lib/desktop";
 import { fmtDate, fmtWeight, round } from "../lib/format";
 import { countInlinePhotos, photoSrc } from "../lib/photoFiles";
@@ -138,6 +140,15 @@ export function Journal({
             )}
           >
             <TrendingUp size={12} /> Insights
+          </button>
+          <button
+            type="button"
+            onClick={() => downloadJournalCsv(bakes)}
+            disabled={bakes.length === 0}
+            title="Download one row per bake for a spreadsheet"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 py-1.5 text-[11px] text-cream/55 transition-colors hover:border-white/20 hover:text-cream disabled:opacity-40"
+          >
+            <FileSpreadsheet size={12} /> CSV
           </button>
           <button
             type="button"
@@ -498,6 +509,7 @@ export function Journal({
       <PhotoFolderCard
         totalPhotos={photoCount}
         inlinePhotos={countInlinePhotos(bakes.flatMap((bake) => bake.photos ?? []))}
+        photoRefs={bakes.flatMap((bake) => bake.photos ?? [])}
         onMovePhotos={onMovePhotos}
       />
     </div>

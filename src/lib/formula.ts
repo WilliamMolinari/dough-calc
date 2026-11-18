@@ -9,6 +9,9 @@ const NUMBER_BOUNDS: Partial<Record<keyof Formula, [number, number]>> = {
   flour2Pct: [0, 95],
   ballCount: [1, 80],
   ballWeight: [40, 1200],
+  panLength: [10, 80],
+  panWidth: [10, 60],
+  doughLoading: [0.2, 1.6],
   hydration: [30, 120],
   salt: [0, 12],
   diastaticMalt: [0, 2],
@@ -78,7 +81,9 @@ export function sanitizeFormula(raw: unknown): Formula {
   ) {
     next.flour2Type = input.flour2Type;
   }
-  if (input.sizing === "flour" || input.sizing === "balls") next.sizing = input.sizing;
+  if (input.sizing === "flour" || input.sizing === "balls" || input.sizing === "pan") {
+    next.sizing = input.sizing;
+  }
   if (typeof input.styleId === "string" && STYLES.some((style) => style.id === input.styleId)) {
     next.styleId = input.styleId;
   }

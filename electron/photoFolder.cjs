@@ -44,6 +44,18 @@ function mimeForName(name) {
   }
 }
 
+/** True only for filenames this app creates, so cleanup can never touch anything else. */
+function isOwnPhotoName(name) {
+  return (
+    typeof name === "string" &&
+    name.startsWith("doughlab-") &&
+    name.length <= 120 &&
+    !name.includes("/") &&
+    !name.includes("\\") &&
+    !name.includes("..")
+  );
+}
+
 /** "file:abc.jpg" → "abc.jpg", rejecting anything that could escape the folder. */
 function fileNameFromRef(ref) {
   if (typeof ref !== "string" || !ref.startsWith(REF_PREFIX)) return null;
@@ -130,6 +142,7 @@ module.exports = {
   carryPhotoFiles,
   extensionForMime,
   fileNameFromRef,
+  isOwnPhotoName,
   mimeForName,
   readPhotoAsDataUrl,
   savePhotoDataUrl,

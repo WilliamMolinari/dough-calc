@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, HardDriveDownload, RotateCcw, Upload } from "lucide-react";
+import { Clock3, Download, HardDriveDownload, History, RotateCcw, Trash2, Upload } from "lucide-react";
 import { formatBytes, createBackup, mergeBakes, parseBackup } from "../lib/backup";
+import type { SnapshotMeta } from "../lib/journalDb";
 import { downloadJson } from "../lib/exports";
 import { inlinePhotos, isStoredPhoto } from "../lib/photoFiles";
 import { readStored, STORAGE_KEYS } from "../lib/storage";
@@ -13,7 +14,11 @@ export function BackupModal({
   bakes,
   formula,
   unit,
+  snapshots = [],
   onRestore,
+  onRestoreSnapshot,
+  onSnapshotNow,
+  onClearAll,
   onToast,
 }: {
   open: boolean;
@@ -21,7 +26,13 @@ export function BackupModal({
   bakes: BakeEntry[];
   formula: Formula;
   unit: Unit;
+  /** Automatic restore points kept in this browser. */
+  snapshots?: SnapshotMeta[];
   onRestore: (bakes: BakeEntry[], formula?: Formula, unit?: Unit) => void;
+  onRestoreSnapshot?: (id: string) => void;
+  onSnapshotNow?: () => void;
+  /** Wipes the journal and every preference on this device. */
+  onClearAll?: () => void | Promise<void>;
   onToast: (message: string, tone?: "success" | "error" | "info") => void;
 }) {
   const [mode, setMode] = useState<"merge" | "replace">("merge");
@@ -35,6 +46,9 @@ export function BackupModal({
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [lastBackup, setLastBackup] = useState<string | null>(null);
+  const [confirmSnapshot, setConfirmSnapshot] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,6 +58,9 @@ export function BackupModal({
     setFileName("");
     setError(null);
     setBusy(false);
+    setConfirmSnapshot(null);
+    setConfirmClear(false);
+    setClearing(false);
     const stored = readStored<unknown>(STORAGE_KEYS.lastBackup, null);
     setLastBackup(
       typeof stored === "string" && !Number.isNaN(new Date(stored).getTime()) ? stored : null,
@@ -198,6 +215,81 @@ export function BackupModal({
 
         <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-3.5">
           <div className="flex items-start gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-lime/20 bg-lime/10 text-lime">
+              <History size={16} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium text-cream/80">Restore points on this device</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-cream/40">
+                DoughLab keeps the last few journal states automatically, so a wrong delete or a bad
+                restore is not permanent. They live in this browser and never leave it.
+              </p>
+
+              {snapshots.length === 0 ? (
+                <p className="mt-2 rounded-xl border border-white/8 bg-black/20 px-2.5 py-2 font-mono text-[10px] text-cream/30">
+                  No restore points yet — one appears after your first saved change.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-1.5">
+                  {snapshots.map((snapshot) => (
+                    <li
+                      key={snapshot.id}
+                      className="flex flex-wrap items-center gap-2 rounded-xl border border-white/8 bg-black/20 px-2.5 py-2"
+                    >
+                      <Clock3 size={11} className="shrink-0 text-cream/30" />
+                      <span className="font-mono text-[10.5px] text-cream/70">
+                        {new Date(snapshot.at).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <span className="font-mono text-[9.5px] text-cream/30">
+                        {snapshot.count} {snapshot.count === 1 ? "bake" : "bakes"} ·{" "}
+                        {formatBytes(snapshot.bytes)}
+                        {snapshot.photos ? "" : " · no photos"}
+                        {snapshot.reason === "manual" ? " · manual" : ""}
+                      </span>
+
+                      {onRestoreSnapshot && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            confirmSnapshot === snapshot.id
+                              ? onRestoreSnapshot(snapshot.id)
+                              : setConfirmSnapshot(snapshot.id)
+                          }
+                          className={cx(
+                            "ml-auto rounded-lg border px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] transition-colors",
+                            confirmSnapshot === snapshot.id
+                              ? "border-hot/40 bg-hot/15 text-hot"
+                              : "border-white/12 bg-white/[0.04] text-cream/55 hover:text-cream",
+                          )}
+                        >
+                          {confirmSnapshot === snapshot.id ? "Confirm" : "Restore"}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {onSnapshotNow && (
+                <button
+                  type="button"
+                  onClick={onSnapshotNow}
+                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-cream/70 transition-colors hover:border-white/20 hover:text-cream"
+                >
+                  <History size={13} /> Save a restore point now
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/8 bg-white/[0.025] p-3.5">
+          <div className="flex items-start gap-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-sky/20 bg-sky/10 text-sky">
               <Upload size={16} />
             </span>
@@ -292,6 +384,70 @@ export function BackupModal({
             </div>
           </div>
         </div>
+
+        {onClearAll && (
+          <div className="rounded-2xl border border-hot/25 bg-hot/[0.05] p-3.5">
+            <div className="flex items-start gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-hot/25 bg-hot/10 text-hot">
+                <Trash2 size={16} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-cream/80">Clear all data</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-cream/40">
+                  Deletes every bake and photo ({bakes.length}{" "}
+                  {bakes.length === 1 ? "bake" : "bakes"}, {photoCount}{" "}
+                  {photoCount === 1 ? "photo" : "photos"}), all restore points, the current formula,
+                  units, timers, dinner plan and the saved Gemini key from this browser. Export a
+                  backup first if you want to keep any of it.
+                </p>
+
+                {!confirmClear ? (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClear(true)}
+                    className="mt-2.5 inline-flex items-center gap-1.5 rounded-xl border border-hot/30 bg-hot/10 px-3 py-2 text-[12px] text-hot transition-colors hover:bg-hot/20"
+                  >
+                    <Trash2 size={13} /> Clear all data
+                  </button>
+                ) : (
+                  <div className="mt-2.5 rounded-xl border border-hot/30 bg-hot/[0.08] p-2.5">
+                    <p className="text-[11px] leading-relaxed text-hot/90">
+                      This cannot be undone.{" "}
+                      {bakes.length
+                        ? `All ${bakes.length} ${bakes.length === 1 ? "bake" : "bakes"} will be gone.`
+                        : "The app will start again from a fresh install."}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={clearing}
+                        onClick={() => {
+                          setClearing(true);
+                          void Promise.resolve(onClearAll?.()).finally(() => {
+                            setClearing(false);
+                            setConfirmClear(false);
+                          });
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-hot/40 bg-hot/20 px-2.5 py-1.5 text-[11.5px] font-semibold text-hot transition-colors hover:bg-hot/30 disabled:opacity-50"
+                      >
+                        <Trash2 size={12} />
+                        {clearing ? "Clearing…" : "Yes, delete everything"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={clearing}
+                        onClick={() => setConfirmClear(false)}
+                        className="rounded-lg border border-white/12 bg-white/[0.04] px-2.5 py-1.5 text-[11.5px] text-cream/65 transition-colors hover:text-cream disabled:opacity-50"
+                      >
+                        Keep my data
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <p className="text-center font-mono text-[9px] text-cream/20">
           Backups stay on this device. Store the file somewhere you will find it again.

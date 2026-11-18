@@ -7,6 +7,7 @@ import {
   Hourglass,
   Package,
   RefreshCw,
+  RotateCcw,
   Scale,
   Sparkles,
   Thermometer,
@@ -82,11 +83,14 @@ export function CalculatorForm({
   math,
   unit,
   onChange,
+  onReset,
 }: {
   formula: Formula;
   math: DoughMath;
   unit: Unit;
   onChange: (patch: Partial<Formula>) => void;
+  /** Puts every ratio back to the app defaults; the journal is untouched. */
+  onReset?: () => void;
 }) {
   const set = <K extends keyof Formula>(key: K, value: Formula[K]) => onChange({ [key]: value } as Partial<Formula>);
   const tempUnit = useTempUnit();
@@ -122,82 +126,182 @@ export function CalculatorForm({
           title="The dough"
           description="Anchor the batch by flour or by finished dough balls. Every field recalculates instantly."
           icon={Scale}
+          action={
+            onReset ? (
+              <button
+                type="button"
+                onClick={onReset}
+                title="Put hydration, salt, leavening and timings back to the app defaults. Your journal is untouched."
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.035] px-2.5 py-1.5 text-[11px] text-cream/55 transition-colors hover:border-white/20 hover:text-cream"
+              >
+                <RotateCcw size={11} /> Reset to defaults
+              </button>
+            ) : undefined
+          }
         />
 
         <Segmented
           label="Batch sizing mode"
           value={formula.sizing}
-          onChange={(value) =>
-            onChange(
-              value === "flour"
-                ? { sizing: "flour", flourWeight: math.flour, ballCount: math.ballCount }
-                : {
-                    sizing: "balls",
-                    ballCount: math.ballCount,
-                    ballWeight: Math.round(math.ballWeight),
-                  },
-            )
-          }
+          onChange={(value) => {
+            if (value === "flour") {
+              onChange({
+                sizing: "flour",
+                flourWeight: Math.round(math.flour),
+                ballCount: math.ballCount,
+                ballWeight: Math.round(math.ballWeight),
+              });
+              return;
+            }
+            if (value === "pan") {
+              onChange({
+                sizing: "pan",
+                // One pan is the useful default; the loading does the sizing.
+                ballCount: formula.sizing === "pan" ? formula.ballCount : 1,
+              });
+              return;
+            }
+            onChange({
+              sizing: "balls",
+              ballCount: math.ballCount,
+              ballWeight: Math.round(math.ballWeight),
+            });
+          }}
           options={[
-            { value: "flour", label: "I know my flour" },
-            { value: "balls", label: "I know my dough balls" },
+            { value: "flour", label: "Flour" },
+            { value: "balls", label: "Dough balls" },
+            { value: "pan", label: "Pan size" },
           ]}
         />
 
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {formula.sizing === "flour" ? (
-            <NumberField
-              label="Total flour"
-              value={flourDisplay}
-              onChange={(value) => onChange({ flourWeight: clamp(fromDisplay(value), 10, 20000) })}
-              min={flourRange.min}
-              max={flourRange.max}
-              step={unit === "g" ? 10 : 0.5}
-              suffix={unit}
-              icon={Wheat}
-            />
-          ) : (
-            <div className="glass-inset rounded-xl px-2.5 py-2">
-              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cream/30">
-                Total flour
-              </p>
-              <p className="mt-0.5 font-mono text-[15px] tabular-nums text-cream/85">
-                {fmtWeight(math.flour, unit)}
-              </p>
+        {formula.sizing === "pan" ? (
+          <>
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <NumberField
+                label="Pans"
+                value={formula.ballCount}
+                onChange={(value) => set("ballCount", Math.round(value))}
+                min={1}
+                max={20}
+                step={1}
+                suffix="pcs"
+              />
+              <NumberField
+                label="Length"
+                value={formula.panLength}
+                onChange={(value) => set("panLength", round(value, 1))}
+                min={10}
+                max={80}
+                step={1}
+                suffix="cm"
+              />
+              <NumberField
+                label="Width"
+                value={formula.panWidth}
+                onChange={(value) => set("panWidth", round(value, 1))}
+                min={10}
+                max={60}
+                step={1}
+                suffix="cm"
+              />
             </div>
-          )}
 
-          <NumberField
-            label="Dough balls"
-            value={formula.ballCount}
-            onChange={(value) => set("ballCount", Math.round(value))}
-            min={1}
-            max={80}
-            step={1}
-            suffix="pcs"
-          />
-
-          {formula.sizing === "balls" ? (
-            <NumberField
-              label="Ball weight"
-              value={ballDisplay}
-              onChange={(value) => onChange({ ballWeight: clamp(fromDisplay(value), 40, 1200) })}
-              min={ballRange.min}
-              max={ballRange.max}
-              step={unit === "g" ? 5 : 0.25}
-              suffix={unit}
-            />
-          ) : (
-            <div className="glass-inset rounded-xl px-2.5 py-2">
-              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cream/30">
-                Ball weight
-              </p>
-              <p className="mt-0.5 font-mono text-[15px] tabular-nums text-cream/85">
-                {fmtWeight(math.ballWeight, unit)}
-              </p>
+            <div className="mt-3.5">
+              <SliderField
+                label="Dough per pan"
+                value={formula.doughLoading}
+                onChange={(value) => set("doughLoading", round(value, 2))}
+                min={0.4}
+                max={1.4}
+                step={0.05}
+                suffix="g/cm²"
+                hint={`${Math.round(math.panArea)} cm² (${(formula.panLength / 2.54).toFixed(1)} × ${(formula.panWidth / 2.54).toFixed(1)} in) → ${fmtWeight(math.panDough, unit)} per pan. Thin and crisp sits near 0.6, Detroit depth near 0.9, focaccia 1.0 and up.`}
+              />
             </div>
-          )}
-        </div>
+
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="glass-inset rounded-xl px-2.5 py-2">
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cream/30">
+                  Total flour
+                </p>
+                <p className="mt-0.5 font-mono text-[15px] tabular-nums text-cream/85">
+                  {fmtWeight(math.flour, unit)}
+                </p>
+              </div>
+              <div className="glass-inset rounded-xl px-2.5 py-2">
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cream/30">
+                  Per pan
+                </p>
+                <p className="mt-0.5 font-mono text-[15px] tabular-nums text-cream/85">
+                  {fmtWeight(math.ballWeight, unit)}
+                </p>
+              </div>
+              <div className="glass-inset rounded-xl px-2.5 py-2">
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cream/30">
+                  Total dough
+                </p>
+                <p className="mt-0.5 font-mono text-[15px] tabular-nums text-cream/85">
+                  {fmtWeight(math.totalDough, unit)}
+                </p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {formula.sizing === "flour" ? (
+              <NumberField
+                label="Total flour"
+                value={flourDisplay}
+                onChange={(value) => onChange({ flourWeight: clamp(fromDisplay(value), 10, 20000) })}
+                min={flourRange.min}
+                max={flourRange.max}
+                step={unit === "g" ? 10 : 0.5}
+                suffix={unit}
+                icon={Wheat}
+              />
+            ) : (
+              <div className="glass-inset rounded-xl px-2.5 py-2">
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cream/30">
+                  Total flour
+                </p>
+                <p className="mt-0.5 font-mono text-[15px] tabular-nums text-cream/85">
+                  {fmtWeight(math.flour, unit)}
+                </p>
+              </div>
+            )}
+
+            <NumberField
+              label="Dough balls"
+              value={formula.ballCount}
+              onChange={(value) => set("ballCount", Math.round(value))}
+              min={1}
+              max={80}
+              step={1}
+              suffix="pcs"
+            />
+
+            {formula.sizing === "balls" ? (
+              <NumberField
+                label="Ball weight"
+                value={ballDisplay}
+                onChange={(value) => onChange({ ballWeight: clamp(fromDisplay(value), 40, 1200) })}
+                min={ballRange.min}
+                max={ballRange.max}
+                step={unit === "g" ? 5 : 0.25}
+                suffix={unit}
+              />
+            ) : (
+              <div className="glass-inset rounded-xl px-2.5 py-2">
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cream/30">
+                  Ball weight
+                </p>
+                <p className="mt-0.5 font-mono text-[15px] tabular-nums text-cream/85">
+                  {fmtWeight(math.ballWeight, unit)}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         <label className="mt-3 flex items-center gap-2 rounded-xl border border-white/8 bg-black/20 px-3 py-2 focus-within:border-ember/50">
           <Wheat className="h-3.5 w-3.5 shrink-0 text-cream/25" />
