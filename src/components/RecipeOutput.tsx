@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import {
   BookmarkPlus,
   Check,
@@ -15,6 +15,7 @@ import {
   Sparkles,
   Thermometer,
   Timer,
+  Upload,
   Wheat,
 } from "lucide-react";
 import type { DoughMath } from "../lib/calc";
@@ -31,6 +32,7 @@ import {
   recipeJson,
 } from "../lib/exports";
 import { getOvenProfile } from "../lib/ovens";
+import { parseRecipeFile } from "../lib/recipeFile";
 import { buildShareUrl } from "../lib/share";
 import { useAnimatedNumber } from "../hooks/useAnimatedNumber";
 import { useTempUnit } from "./TempUnit";
@@ -92,6 +94,7 @@ export function RecipeOutput({
   onSave,
   onPrint,
   onKitchen,
+  onImport,
   onToast,
 }: {
   formula: Formula;
@@ -100,11 +103,13 @@ export function RecipeOutput({
   onSave: () => void;
   onPrint: () => void;
   onKitchen: () => void;
+  onImport: (formula: Formula, unit: Unit) => void;
   onToast: (message: string, tone?: "success" | "error" | "info") => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
   const [rendering, setRendering] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const lines = ingredientLines(formula, math, unit);
   const tempUnit = useTempUnit();
   const blend = flourBlendLabel(formula);
@@ -123,7 +128,21 @@ export function RecipeOutput({
 
   const handleJson = () => {
     downloadJson(recipeJson(formula, unit, "DoughLab formula"), "doughlab-formula.json");
-    onToast("Formula JSON downloaded", "success");
+    onToast("Recipe exported — the journal was not touched", "success");
+  };
+
+  const handleImportFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const result = parseRecipeFile(await file.text());
+      if (!result.ok) {
+        onToast(result.error, "error");
+        return;
+      }
+      onImport(result.formula, result.unit);
+    } catch {
+      onToast("That file could not be read", "error");
+    }
   };
 
   const handleImage = async () => {
@@ -301,13 +320,32 @@ export function RecipeOutput({
           >
             <span className={cx(rendering && "opacity-70")}>{rendering ? "Rendering" : "PNG"}</span>
           </ActionButton>
-          <ActionButton onClick={handleJson} icon={FileJson} ariaLabel="Download recipe JSON">
-            JSON
+          <ActionButton onClick={handleJson} icon={FileJson} ariaLabel="Export just this recipe as a file">
+            Export
+          </ActionButton>
+          <ActionButton
+            onClick={() => fileInput.current?.click()}
+            icon={Upload}
+            ariaLabel="Import a recipe file"
+          >
+            Import
           </ActionButton>
           <ActionButton onClick={onPrint} icon={Printer} ariaLabel="Open printable recipe card">
             Print
           </ActionButton>
         </div>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          aria-hidden
+          tabIndex={-1}
+          onChange={(event) => {
+            void handleImportFile(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
         <p className="pt-1 text-center font-mono text-[9.5px] text-cream/20">
           <Download size={9} className="mr-1 inline" />
           Everything stays in this browser

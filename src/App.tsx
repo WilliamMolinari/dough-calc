@@ -928,6 +928,21 @@ export default function App() {
     setPendingTrialFrom(null);
   };
 
+  /** Loads a recipe file over the current formula, one tap from undo. */
+  const importRecipe = (imported: Formula, importedUnit: Unit) => {
+    const previous = { ...formula };
+    const previousUnit = unit;
+    setFormula(imported);
+    setUnit(importedUnit);
+    pushToast("Recipe imported — adjust it or log a bake", "success", {
+      label: "Undo",
+      run: () => {
+        setFormula(previous);
+        setUnit(previousUnit);
+      },
+    });
+  };
+
   /** Puts every ratio and setting back to the app defaults, journal untouched. */
   const resetFormula = () => {
     const previous = { ...formula };
@@ -1216,6 +1231,7 @@ export default function App() {
                   onKitchen={() =>
                     setKitchen({ formula: effectiveFormula, title: style.name })
                   }
+                  onImport={importRecipe}
                   onToast={pushToast}
                 />
               </div>

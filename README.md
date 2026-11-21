@@ -91,6 +91,9 @@ the warm paper version shown above. The choice is remembered on your device.
   more flavour and need more time. **Auto dose from the schedule** sets the dose to match your timings.
 - **Bulk / Cold retard / Temper** = hours at room temperature, hours in the fridge, hours back at room
   temperature. The app turns these into a start-to-oven timeline.
+- **Recipe file** = **Export** in the weigh & bake panel downloads just the current formula as
+  JSON; **Import** on the same row loads a recipe file back and leaves the journal alone. Handy for
+  moving one recipe between devices, and Undo is one tap away after an import.
 - **Oven** chips = the heat profile. Pick the one closest to your oven or outdoor oven; the preheat time
   and bake time change with it.
 
