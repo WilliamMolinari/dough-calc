@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookmarkPlus, Save, X } from "lucide-react";
+import { flourFieldText, formulaTags } from "../lib/bakeDefaults";
 import { OVEN_OPTIONS, TAG_SUGGESTIONS, getStyle } from "../lib/presets";
 import { getOvenProfile } from "../lib/ovens";
 import { fmtWeight } from "../lib/format";
@@ -86,6 +87,9 @@ export function SaveBakeModal({
   const tempUnit = useTempUnit();
   const profileOven = getOvenProfile(formula.ovenProfile).logName;
   const defaultOven = OVEN_OPTIONS.includes(profileOven) ? profileOven : OVEN_OPTIONS[0];
+  // A new log starts from the recipe itself: its flour, leaven and ferment.
+  const defaultFlour = useMemo(() => flourFieldText(formula), [formula]);
+  const defaultTags = useMemo(() => formulaTags(formula), [formula]);
   const [name, setName] = useState(defaultName(style.name));
   const [ratings, setRatings] = useState<Ratings>(EMPTY_RATINGS);
   const [notes, setNotes] = useState("");
@@ -122,9 +126,9 @@ export function SaveBakeModal({
         setRatings(EMPTY_RATINGS);
         setNotes("");
         setNextTimeNotes("");
-        setFlourBrand("");
+        setFlourBrand(defaultFlour);
         setOven(defaultOven);
-        setTags([]);
+        setTags([...defaultTags]);
         setPhotos([]);
         setOutcomeTags([]);
         setHypothesis("");
@@ -135,7 +139,7 @@ export function SaveBakeModal({
       setPhotoBusy(false);
     }
     previousOpen.current = open;
-  }, [open, style.name, initial, suggestedName, defaultOven]);
+  }, [open, style.name, initial, suggestedName, defaultOven, defaultFlour, defaultTags]);
 
   const addTag = (raw: string) => {
     setTags((prev) => withTag(prev, raw));
@@ -201,7 +205,7 @@ export function SaveBakeModal({
       subtitle={
         editing
           ? "Update the ratings, notes, photos and oven. The saved formula stays exactly as it was."
-          : "Rate it now or later — the formula is captured exactly as it is."
+          : "Rate it now or later — the formula is captured exactly as it is, and the flour, oven and process tags start from it."
       }
       size="lg"
       footer={

@@ -143,6 +143,11 @@ focaccia. The calculator multiplies by the pan area, so a 25 × 20 cm pan at 0.9
 Change **one** thing per bake. The Journal's trial tools are built around that: **Bake this again** copies the
 formula, you change a single value, and the comparison shows what actually moved.
 
+**Log a bake** starts from the recipe in front of you: its flour name (and blend), its oven and the process
+tags it already answers — sourdough, poolish or biga, cold ferment or same-day. Ratings, notes and the
+day's measured temperatures stay yours to fill in, and every one of those pre-filled fields is editable
+if the bake went differently.
+
 ## Requirements
 
 | Tool | Version |
